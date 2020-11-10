@@ -24,8 +24,8 @@ SOURCE_EXTENSIONS = {
 }
 
 HEADER_TEMPLATE = string.Template(
-"""${symbol} Copyright ${year} Contributors to the Veraison project.
-${symbol} SPDX-License-Identifier: Apache-2.0
+"""${begin_symbol} Copyright ${year} Contributors to the Veraison project.
+${end_symbol} SPDX-License-Identifier: Apache-2.0
 """
 )
 
