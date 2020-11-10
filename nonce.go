@@ -45,6 +45,17 @@ func (ns *Nonces) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
+// Validate checks that all Nonce's are valid.
+func (ns Nonces) Validate() error {
+	for _, n := range ns {
+		if err := n.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // NonceFromHex creates a new Nonce instance from a string containing
 // hex-encoded byte values and returns a pointer to it.
 func NonceFromHex(text string) (*Nonce, error) {
@@ -53,24 +64,13 @@ func NonceFromHex(text string) (*Nonce, error) {
 		return nil, err
 	}
 
-	return NewNonce(value)
+	return &Nonce{value}, nil
 }
 
 // A Nonce is between 8 and 64 bytes
 //    nonce-type = bstr .size (8..64)
 type Nonce struct {
 	value []byte
-}
-
-// NewNonce instantiates a new Nonce from the specified data and returns a
-// pointer to it.
-func NewNonce(data []byte) (*Nonce, error) {
-	dlen := len(data)
-	if dlen > 64 || dlen < 8 {
-		return nil, fmt.Errorf("a nonce must be between 8 and 64 bytes long; found %v", dlen)
-	}
-
-	return &Nonce{data}, nil
 }
 
 // MarshalCBOR encodes the Nonce a CBOR byte string.
@@ -86,13 +86,18 @@ func (n *Nonce) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	vlen := len(value)
+	n.value = value
+
+	return nil
+}
+
+// Validate checks that the underlying value of the Nonce is between 8 and 64
+// bytes, as is required by the EAT spec.
+func (n Nonce) Validate() error {
+	vlen := len(n.value)
 	if vlen > 64 || vlen < 8 {
 		return fmt.Errorf("a nonce must be between 8 and 64 bytes long; found %v", vlen)
 	}
-
-	n.value = value
-
 	return nil
 }
 
