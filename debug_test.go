@@ -4,13 +4,14 @@
 package eat
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDebug_Set(t *testing.T) {
+func TestDebug_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
 		tv          uint
@@ -18,27 +19,27 @@ func TestDebug_Set(t *testing.T) {
 	}{
 		{
 			"not-disabled",
-			0,
+			DebugNotDisabled,
 			nil,
 		},
 		{
 			"disabled",
-			1,
+			DebugDisabled,
 			nil,
 		},
 		{
 			"disabled-since-boot",
-			2,
+			DebugDisabledSinceBoot,
 			nil,
 		},
 		{
 			"permanent-disable",
-			3,
+			DebugPermanentDisable,
 			nil,
 		},
 		{
 			"full-permanent-disable",
-			4,
+			DebugFullPermanentDisable,
 			nil,
 		},
 		{
@@ -50,13 +51,41 @@ func TestDebug_Set(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var d Debug
-			err := d.Set(test.tv)
+			d := Debug(test.tv)
+			err := d.Validate()
 			if test.expectedErr != nil {
 				assert.Equal(t, test.expectedErr, err)
 			} else {
 				assert.Equal(t, test.tv, uint(d))
 			}
 		})
+	}
+}
+
+func TestDebug_Marshal(t *testing.T) {
+	type Expected struct {
+		CBOR []byte
+		JSON string
+	}
+
+	tests := map[uint]Expected{
+		DebugNotDisabled:          {[]byte{0x00}, `0`},
+		DebugDisabled:             {[]byte{0x01}, `1`},
+		DebugDisabledSinceBoot:    {[]byte{0x02}, `2`},
+		DebugPermanentDisable:     {[]byte{0x03}, `3`},
+		DebugFullPermanentDisable: {[]byte{0x04}, `4`},
+		5:                         {[]byte{0x05}, `5`},
+	}
+
+	for codepoint, expected := range tests {
+		d := Debug(codepoint)
+
+		actual, err := em.Marshal(d)
+		assert.Nil(t, err)
+		assert.Equal(t, expected.CBOR, actual)
+
+		actual, err = json.Marshal(d)
+		assert.Nil(t, err)
+		assert.JSONEq(t, expected.JSON, string(actual))
 	}
 }
