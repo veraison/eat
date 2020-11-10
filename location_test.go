@@ -5,7 +5,6 @@ package eat
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -146,12 +145,10 @@ func TestLocation_Marshal(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			actual, err := em.Marshal(test.testVector)
-			fmt.Printf("cbor: %x\n", actual)
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedCBOR, actual)
 
 			actual, err = json.Marshal(test.testVector)
-			fmt.Printf("json: %s\n", string(actual))
 			assert.Nil(t, err)
 			assert.JSONEq(t, test.expectedJSON, string(actual))
 		})

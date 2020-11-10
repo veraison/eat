@@ -4,6 +4,7 @@
 package eat
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -39,7 +40,7 @@ func (s *StringOrURI) FromString(value string) error {
 	return nil
 }
 
-// FromString initializes the StringOrURI value from the specified url.URL,
+// FromURL initializes the StringOrURI value from the specified url.URL,
 // overwriting any existing value.
 func (s *StringOrURI) FromURL(value *url.URL) {
 	s.text = nil
@@ -50,12 +51,12 @@ func (s *StringOrURI) FromURL(value *url.URL) {
 // NOTE: this only indicates whether the value was set as such -- it possible
 //       that the arbitrary string value happens to be a valid URI, however, if
 //       it was not set as such, this will return false.
-func (s *StringOrURI) IsURI() bool {
+func (s StringOrURI) IsURI() bool {
 	return s.uri != nil
 }
 
 // String returns the string representation of the StringOrURI value.
-func (s *StringOrURI) String() string {
+func (s StringOrURI) String() string {
 	if s.uri != nil {
 		return s.uri.String()
 	}
@@ -70,7 +71,7 @@ func (s *StringOrURI) String() string {
 // ToURL will return the url.URL representation of the underlying value, if
 // possible. This will attempt to parse the underlying string value as a URL if
 // it isn't one already.
-func (s *StringOrURI) ToURL() (*url.URL, error) {
+func (s StringOrURI) ToURL() (*url.URL, error) {
 	if s.IsURI() {
 		return s.uri, nil
 	}
@@ -84,7 +85,7 @@ func (s *StringOrURI) ToURL() (*url.URL, error) {
 
 // MarshalCBOR will encode the StringOrURI value as a CBOR text string,
 // wrapping it in Tag 32, if it's a URI. See RFC7049, Section 2.4.4.3.
-func (s *StringOrURI) MarshalCBOR() ([]byte, error) {
+func (s StringOrURI) MarshalCBOR() ([]byte, error) {
 	if s.IsURI() {
 		tag := cbor.Tag{Number: 32, Content: s.uri.String()}
 		return cbor.Marshal(tag)
@@ -144,10 +145,23 @@ func (s *StringOrURI) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
-func isCBORTag(data []byte) bool {
-	return (data[0] & 0xe0) == 0xc0
+// MarshalJSON encodes the receiver StringOrURI into a JSON string
+func (s StringOrURI) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
 }
 
-func isCBORTextString(data []byte) bool {
-	return (data[0] & 0xe0) == 0x60
+// UnmarshalJSON attempts at decoding the supplied JSON data into the receiver
+// StringOrURI
+func (s *StringOrURI) UnmarshalJSON(data []byte) error {
+	var v string
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	if err := s.FromString(v); err != nil {
+		return err
+	}
+
+	return nil
 }
