@@ -162,3 +162,20 @@ func TestNonces_Validate(t *testing.T) {
 	}
 	assert.EqualError(ns3.Validate(), "a nonce must be between 8 and 64 bytes long; found 4")
 }
+
+func TestNonces_UnmarshalCBOR_Repeatedely(t *testing.T) {
+	assert := assert.New(t)
+	data := []byte{0x48, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}
+	data2 := []byte{0x48, 0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe}
+
+	expected := Nonces{Nonce{[]byte{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe}}}
+
+	actual := Nonces{}
+
+	err := actual.UnmarshalCBOR(data)
+	assert.Nil(err)
+	err = actual.UnmarshalCBOR(data2)
+	assert.Nil(err)
+
+	assert.Equal(expected, actual)
+}
