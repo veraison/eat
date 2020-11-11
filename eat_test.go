@@ -24,6 +24,10 @@ var (
 	debug       = Debug(DebugDisabled)
 	location    = Location{Latitude: 12.34, Longitude: 56.78}
 	uptime      = uint(60)
+	submods     = Submods{
+		SubmodName{"eat-claims"}: Submod{Eat{}},
+		SubmodName{"eat-token"}:  Submod{[]byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}},
+	}
 
 	issuer   = AcmeInc
 	subject  = "rr-trap"
@@ -51,10 +55,16 @@ var (
 			CwtID:      &oemID,
 		},
 	}
+
+	justEatSubmods = Eat{
+		Submods: &submods,
+	}
 )
 
 func cborRoundTripper(t *testing.T, tv Eat, expected []byte) {
 	data, err := tv.ToCBOR()
+
+	t.Logf("CBOR: %x", data)
 
 	assert.Nil(t, err)
 	assert.Equal(t, expected, data)
@@ -68,6 +78,8 @@ func cborRoundTripper(t *testing.T, tv Eat, expected []byte) {
 
 func jsonRoundTripper(t *testing.T, tv Eat, expected string) {
 	data, err := tv.ToJSON()
+
+	t.Logf("JSON: '%s'", string(data))
 
 	assert.Nil(t, err)
 	assert.JSONEq(t, expected, string(data))
@@ -174,5 +186,17 @@ func TestEat_Full_RoundtripJSON(t *testing.T) {
 	"iat": 0,
 	"cti": "////////"
 }`
+	jsonRoundTripper(t, tv, expected)
+}
+
+func TestEat_Submods_RoundtripJSON(t *testing.T) {
+	tv := justEatSubmods
+	expected := `{
+		"submods": {
+		  "eat-claims": {},
+		  "eat-token": "2D3SQaA="
+		}
+	  }`
+
 	jsonRoundTripper(t, tv, expected)
 }
