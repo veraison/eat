@@ -6,6 +6,7 @@ package eat
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	cbor "github.com/fxamacker/cbor/v2"
 )
@@ -18,10 +19,24 @@ type StringOrURI struct {
 }
 
 // FromString initializes the StringOrURI value from the specified string,
-// overwriting any existing value.
-func (s *StringOrURI) FromString(value string) {
-	s.uri = nil
-	s.text = &value
+// overwriting any existing value. If the value contains a colon (":"), then an
+// attempt will be made to parse it as a URI (see RFC7519, section 2),
+// otherwise, the value is assumed to be a non-URI string.
+func (s *StringOrURI) FromString(value string) error {
+	if strings.Contains(value, ":") {
+		u, err := url.Parse(value)
+		if err != nil {
+			return err
+		}
+
+		s.uri = u
+		s.text = nil
+	} else {
+		s.uri = nil
+		s.text = &value
+	}
+
+	return nil
 }
 
 // FromString initializes the StringOrURI value from the specified url.URL,
@@ -97,7 +112,10 @@ func (s *StringOrURI) UnmarshalCBOR(data []byte) error {
 			return err
 		}
 
-		s.FromString(value)
+		err = s.FromString(value)
+		if err != nil {
+			return err
+		}
 	} else if isCBORTag(data) {
 		var tag cbor.Tag
 		err := cbor.Unmarshal(data, &tag)

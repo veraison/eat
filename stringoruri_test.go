@@ -13,15 +13,16 @@ import (
 func TestStringOrURI_Basic(t *testing.T) {
 	assert := assert.New(t)
 
-	text := "::Acme Inc."
+	text := "% Acme Inc %"
 
 	var s StringOrURI
 
-	s.FromString(text)
+	err := s.FromString(text)
+	assert.Nil(err)
 	assert.Equal(text, s.String())
 	assert.False(s.IsURI())
 
-	_, err := s.ToURL()
+	_, err = s.ToURL()
 	assert.NotNil(err)
 
 	urlText := "http://example.com"
@@ -32,8 +33,9 @@ func TestStringOrURI_Basic(t *testing.T) {
 	assert.Equal(urlText, s.String())
 	assert.True(s.IsURI())
 
-	s.FromString(urlText)
-	assert.False(s.IsURI())
+	err = s.FromString(urlText)
+	assert.Nil(err)
+	assert.True(s.IsURI())
 
 	newU, err := s.ToURL()
 	assert.Nil(err)
@@ -62,12 +64,13 @@ func TestStringOrURI_MarshalCBOR(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(expected, actual)
 
-	s.FromString("::Acme Inc.")
+	err = s.FromString("% Acme Inc. %")
+	assert.Nil(err)
 
-	// 6b                        # text(11)
-	//    3a3a41636d6520496e632e # "::Acme Inc."
+	//6d                            # text(13)
+	//252041636d6520496e632e2025 # "% Acme Inc. %"
 	expected = []byte{
-		0x6b, 0x3a, 0x3a, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e,
+		0x6d, 0x25, 0x20, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e, 0x20, 0x25,
 	}
 
 	actual, err = s.MarshalCBOR()
@@ -101,9 +104,10 @@ func TestStringOrURI_UnmarshalCBOR(t *testing.T) {
 	// 6b                        # text(11)
 	//    3a3a41636d6520496e632e # "::Acme Inc."
 	data = []byte{
-		0x6b, 0x3a, 0x3a, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e,
+		0x6d, 0x25, 0x20, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e, 0x20, 0x25,
 	}
-	expected.FromString("::Acme Inc.")
+	err = expected.FromString("% Acme Inc. %")
+	assert.Nil(err)
 
 	err = actual.UnmarshalCBOR(data)
 	assert.Nil(err)
