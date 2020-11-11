@@ -4,7 +4,10 @@
 package eat
 
 import (
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
 
 	cbor "github.com/fxamacker/cbor/v2"
@@ -74,7 +77,7 @@ type Nonce struct {
 }
 
 // MarshalCBOR encodes the Nonce a CBOR byte string.
-func (n *Nonce) MarshalCBOR() ([]byte, error) {
+func (n Nonce) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(n.value)
 }
 
@@ -101,10 +104,31 @@ func (n Nonce) Validate() error {
 	return nil
 }
 
-func isCBORArray(data []byte) bool {
-	if len(data) == 0 {
-		return false
+// MarshalJSON encodes the receiver Nonces as a JSON string
+func (ns Nonces) MarshalJSON() ([]byte, error) {
+	if len(ns) == 1 {
+		return json.Marshal(ns[0].value)
 	}
 
-	return (data[0] & 0xe0) == 0x80
+	return nil, errors.New("TODO handle array of nonces")
+}
+
+func (ns *Nonces) UnmarshalJSON(data []byte) error {
+	var v interface{}
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	switch t := v.(type) {
+	case string:
+		value, err := base64.StdEncoding.DecodeString(t)
+		if err != nil {
+			return err
+		}
+		*ns = append(*ns, Nonce{value})
+		return nil
+	default:
+		return errors.New("TODO handle array of nonces")
+	}
 }
