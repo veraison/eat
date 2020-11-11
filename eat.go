@@ -7,8 +7,8 @@ import "encoding/json"
 
 // Eat is the internal representation of a EAT token
 type Eat struct {
-	Nonce *Nonces `cbor:"10,keyasint,omitempty" json:"nonce,omitempty"`
-	// TODO(setrofim) UEID claim (11)
+	Nonce         *Nonces        `cbor:"10,keyasint,omitempty" json:"nonce,omitempty"`
+	UEID          *UEID          `cbor:"11,keyasint,omitempty" json:"ueid,omitempty"`
 	Origination   *StringOrURI   `cbor:"12,keyasint,omitempty" json:"origination,omitempty"`
 	OemID         *[]byte        `cbor:"13,keyasint,omitempty" json:"oemid,omitempty"`
 	SecurityLevel *SecurityLevel `cbor:"14,keyasint,omitempty" json:"security-level,omitempty"`
