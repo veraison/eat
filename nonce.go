@@ -43,7 +43,7 @@ func (ns *Nonces) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	*ns = append(*ns, n)
+	*ns = Nonces{n}
 
 	return nil
 }
@@ -126,7 +126,7 @@ func (ns *Nonces) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return err
 		}
-		*ns = append(*ns, Nonce{value})
+		*ns = Nonces{Nonce{value}}
 		return nil
 	default:
 		return errors.New("TODO handle array of nonces")
