@@ -3,8 +3,6 @@ package eat
 import (
 	"encoding/json"
 	"errors"
-
-	cbor "github.com/fxamacker/cbor/v2"
 )
 
 // In the general case, the "aud" value is an array of case- sensitive strings,
@@ -17,22 +15,22 @@ type Audience []StringOrURI
 // one, or an array of StringOrURI's if there are multiple.
 func (a Audience) MarshalCBOR() ([]byte, error) {
 	if len(a) == 1 {
-		return cbor.Marshal(a[0])
+		return em.Marshal(a[0])
 	}
 
-	return cbor.Marshal([]StringOrURI(a))
+	return em.Marshal([]StringOrURI(a))
 }
 
 // UnmarshalCBOR decodes audience claim data. This may be a single StringOrURI,
 // or an array of such.
 func (a *Audience) UnmarshalCBOR(data []byte) error {
 	if isCBORArray(data) {
-		return cbor.Unmarshal(data, (*[]StringOrURI)(a))
+		return dm.Unmarshal(data, (*[]StringOrURI)(a))
 	}
 
 	var v StringOrURI
 
-	if err := cbor.Unmarshal(data, &v); err != nil {
+	if err := dm.Unmarshal(data, &v); err != nil {
 		return err
 	}
 

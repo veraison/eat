@@ -9,8 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	cbor "github.com/fxamacker/cbor/v2"
 )
 
 // A nonce-claim may be single Nonce or an array of two or more.
@@ -24,22 +22,22 @@ type Nonces []Nonce
 // one, or an array of byte strings if there are multiple.
 func (ns Nonces) MarshalCBOR() ([]byte, error) {
 	if len(ns) == 1 {
-		return cbor.Marshal(ns[0])
+		return em.Marshal(ns[0])
 	}
 
-	return cbor.Marshal([]Nonce(ns))
+	return em.Marshal([]Nonce(ns))
 }
 
 // UnmarshalCBOR decodes nonce claim data. This may be a single byte string
 // between 8 and 64 bytes long, or an array of two or more such strings.
 func (ns *Nonces) UnmarshalCBOR(data []byte) error {
 	if isCBORArray(data) {
-		return cbor.Unmarshal(data, (*[]Nonce)(ns))
+		return dm.Unmarshal(data, (*[]Nonce)(ns))
 	}
 
 	var n Nonce
 
-	if err := cbor.Unmarshal(data, &n); err != nil {
+	if err := dm.Unmarshal(data, &n); err != nil {
 		return err
 	}
 
@@ -78,14 +76,14 @@ type Nonce struct {
 
 // MarshalCBOR encodes the Nonce a CBOR byte string.
 func (n Nonce) MarshalCBOR() ([]byte, error) {
-	return cbor.Marshal(n.value)
+	return em.Marshal(n.value)
 }
 
 // UnmarshalCBOR decodes a CBOR byte string and uses it as the Nonce value.
 func (n *Nonce) UnmarshalCBOR(data []byte) error {
 	var value []byte
 
-	if err := cbor.Unmarshal(data, &value); err != nil {
+	if err := dm.Unmarshal(data, &value); err != nil {
 		return err
 	}
 

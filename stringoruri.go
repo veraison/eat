@@ -88,11 +88,11 @@ func (s StringOrURI) ToURL() (*url.URL, error) {
 func (s StringOrURI) MarshalCBOR() ([]byte, error) {
 	if s.IsURI() {
 		tag := cbor.Tag{Number: 32, Content: s.uri.String()}
-		return cbor.Marshal(tag)
+		return em.Marshal(tag)
 	}
 
 	if s.text != nil {
-		return cbor.Marshal(s.text)
+		return em.Marshal(s.text)
 	}
 
 	return []byte{}, nil
@@ -108,7 +108,7 @@ func (s *StringOrURI) UnmarshalCBOR(data []byte) error {
 
 	if isCBORTextString(data) {
 		var value string
-		err := cbor.Unmarshal(data, &value)
+		err := dm.Unmarshal(data, &value)
 		if err != nil {
 			return err
 		}
@@ -119,7 +119,7 @@ func (s *StringOrURI) UnmarshalCBOR(data []byte) error {
 		}
 	} else if isCBORTag(data) {
 		var tag cbor.Tag
-		err := cbor.Unmarshal(data, &tag)
+		err := dm.Unmarshal(data, &tag)
 		if err != nil {
 			return err
 		}
