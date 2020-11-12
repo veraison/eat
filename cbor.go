@@ -12,6 +12,7 @@ var (
 
 func initCBOREncMode() (en cbor.EncMode, err error) {
 	encOpt := cbor.EncOptions{
+		Sort:          cbor.SortCanonical,
 		IndefLength:   cbor.IndefLengthForbidden,
 		TimeTag:       cbor.EncTagRequired,
 		ShortestFloat: cbor.ShortestFloat16,
