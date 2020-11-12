@@ -16,8 +16,9 @@ type Eat struct {
 	Debug         *Debug         `cbor:"16,keyasint,omitempty" json:"debug-disable,omitempty"`
 	Location      *Location      `cbor:"17,keyasint,omitempty" json:"location,omitempty"`
 	Uptime        *uint          `cbor:"19,keyasint,omitempty" json:"uptime,omitempty"`
+
+	CWTClaims
 	// TODO(tho) Submods claim (20)
-	// TODO(tho,setrofim) CWT claims
 }
 
 // FromCBOR deserializes the supplied CBOR encoded EAT into the receiver Eat

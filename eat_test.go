@@ -5,6 +5,7 @@ package eat
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -24,6 +25,11 @@ var (
 	location    = Location{Latitude: 12.34, Longitude: 56.78}
 	uptime      = uint(60)
 
+	issuer   = AcmeInc
+	subject  = "rr-trap"
+	audience = Audience{origination}
+	epoch    = NumericDate(time.Unix(0, 0))
+
 	fatEat = Eat{
 		Nonce:         &Nonces{nonce},
 		UEID:          &ueID,
@@ -34,6 +40,16 @@ var (
 		Debug:         &debug,
 		Location:      &location,
 		Uptime:        &uptime,
+
+		CWTClaims: CWTClaims{
+			Issuer:     &issuer,
+			Subject:    &subject,
+			Audience:   &audience,
+			Expiration: &epoch,
+			NotBefore:  &epoch,
+			IssuedAt:   &epoch,
+			CwtID:      &oemID,
+		},
 	}
 )
 
@@ -66,7 +82,7 @@ func jsonRoundTripper(t *testing.T, tv Eat, expected string) {
 func TestEat_Full_RoundtripCBOR(t *testing.T) {
 	tv := fatEat
 	/*
-	   a9                                       # map(9)
+	   b0                                       # map(16)
 	      0a                                    # unsigned(10)
 	      44                                    # bytes(4)
 	         deadbeef                           # "\xDE\xAD\xBE\xEF"
@@ -93,16 +109,42 @@ func TestEat_Full_RoundtripCBOR(t *testing.T) {
 	         fb 404c63d70a3d70a4                # primitive(4633187891898314916)
 	      13                                    # unsigned(19)
 	      18 3c                                 # unsigned(60)
+	      01                                    # unsigned(1)
+	      69                                    # text(9)
+	         41636d6520496e632e                 # "Acme Inc."
+	      02                                    # unsigned(2)
+	      67                                    # text(7)
+	         72722d74726170                     # "rr-trap"
+	      03                                    # unsigned(3)
+	      69                                    # text(9)
+	         41636d6520496e632e                 # "Acme Inc."
+	      04                                    # unsigned(4)
+	      c1                                    # tag(1)
+	         00                                 # unsigned(0)
+	      05                                    # unsigned(5)
+	      c1                                    # tag(1)
+	         00                                 # unsigned(0)
+	      06                                    # unsigned(6)
+	      c1                                    # tag(1)
+	         00                                 # unsigned(0)
+	      07                                    # unsigned(7)
+	      46				    # bytes(6)
+	         ffffffffffff
 	*/
 	expected := []byte{
-		0xa9, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef, 0x0b, 0x51, 0x01,
+		0xb0, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef, 0x0b, 0x51, 0x01,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad,
 		0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0x0c, 0x69, 0x41, 0x63,
 		0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e, 0x0d, 0x46, 0xff,
 		0xff, 0xff, 0xff, 0xff, 0xff, 0x0e, 0x03, 0x0f, 0xf5, 0x10,
 		0x01, 0x11, 0xa2, 0x01, 0xfb, 0x40, 0x28, 0xae, 0x14, 0x7a,
 		0xe1, 0x47, 0xae, 0x02, 0xfb, 0x40, 0x4c, 0x63, 0xd7, 0x0a,
-		0x3d, 0x70, 0xa4, 0x13, 0x18, 0x3c,
+		0x3d, 0x70, 0xa4, 0x13, 0x18, 0x3c, 0x01, 0x69, 0x41, 0x63,
+		0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e, 0x02, 0x67, 0x72,
+		0x72, 0x2d, 0x74, 0x72, 0x61, 0x70, 0x03, 0x69, 0x41, 0x63,
+		0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e, 0x04, 0xc1, 0x00,
+		0x05, 0xc1, 0x00, 0x06, 0xc1, 0x00, 0x07, 0x46, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
 	}
 
 	cborRoundTripper(t, tv, expected)
@@ -123,7 +165,14 @@ func TestEat_Full_RoundtripJSON(t *testing.T) {
 		"long": 56.78
 	},
 	"ueid": "Ad6tvu/erb7v3q2+796tvu8=",
-	"uptime": 60
+	"uptime": 60,
+	"iss": "Acme Inc.",
+	"sub": "rr-trap",
+	"aud": "Acme Inc.",
+	"exp": 0,
+	"nbf": 0,
+	"iat": 0,
+	"cti": "////////"
 }`
 	jsonRoundTripper(t, tv, expected)
 }
