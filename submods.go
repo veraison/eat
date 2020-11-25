@@ -8,65 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"math"
-	"strconv"
 )
-
-// SubmodName is the type of a submod name. A custom type is needed to implement
-// a TextMarshaler to encode the naked interface{} key into a string suitable
-// for the JSON map.
-type SubmodName struct{ value interface{} }
-
-// MarshalText marshals the receiver SubmodName's value into a string
-func (sn SubmodName) MarshalText() (text []byte, err error) {
-	return []byte(fmt.Sprintf("%v", sn.value)), nil
-}
-
-// UnmarshalText is the dual of MarshalText
-func (sn *SubmodName) UnmarshalText(text []byte) error {
-	s := string(text)
-
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		sn.value = s
-	} else {
-		sn.value = int64(i)
-	}
-
-	return nil
-}
-
-// MarshalCBOR encodes the submod name wrapped in the SubmodName receiver to
-// CBOR
-func (sn SubmodName) MarshalCBOR() ([]byte, error) {
-	return em.Marshal(sn.value)
-}
-
-// UnmarshalCBOR decodes the supplied data into the SubmodName receiver
-func (sn *SubmodName) UnmarshalCBOR(data []byte) error {
-	var v interface{}
-
-	if err := dm.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	switch t := v.(type) {
-	case uint64:
-		if t > math.MaxInt64 {
-			return errors.New("submod name too big")
-		}
-		sn.value = int64(t)
-	case int64:
-		sn.value = t
-	case string:
-		sn.value = t
-	default:
-		return fmt.Errorf("submod name must be string or (u)int64, found %T", t)
-	}
-
-	return nil
-}
 
 // Submod is the type of a submod: either a raw EAT (wrapped in a Sign1 CWT), or
 // a map of EAT claims
@@ -167,27 +109,16 @@ func checkTags(data []byte) error {
 }
 
 // Submods models the submods type
-type Submods map[SubmodName]Submod
+type Submods map[string]Submod
 
 // Get retrieves a submod by name (either int64 or string)
-func (s Submods) Get(name interface{}) interface{} {
-	switch name.(type) {
-	case string, int64:
-		return s[SubmodName{name}].value
-	default:
-		return nil
-	}
+func (s Submods) Get(name string) interface{} {
+	return s[name].value
 }
 
 // Add inserts the named submod in the Submods container. The supplied name must
 // be of type string or int64
-func (s *Submods) Add(name interface{}, submod interface{}) error {
-	switch t := name.(type) {
-	case string, int64: // OK
-	default:
-		return fmt.Errorf("submod name must be string or int64, found %T", t)
-	}
-
+func (s *Submods) Add(name string, submod interface{}) error {
 	switch t := submod.(type) {
 	case Eat: // OK as-is
 	case []byte: // make sure that the wrapping tags are in the right place
@@ -202,7 +133,7 @@ func (s *Submods) Add(name interface{}, submod interface{}) error {
 		*s = make(Submods)
 	}
 
-	(*s)[SubmodName{name}] = Submod{submod}
+	(*s)[name] = Submod{submod}
 
 	return nil
 }
