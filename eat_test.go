@@ -25,8 +25,8 @@ var (
 	location    = Location{Latitude: 12.34, Longitude: 56.78}
 	uptime      = uint(60)
 	submods     = Submods{
-		SubmodName{"eat-claims"}: Submod{Eat{}},
-		SubmodName{"eat-token"}:  Submod{[]byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}},
+		"eat-claims": Submod{Eat{}},
+		"eat-token":  Submod{[]byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}},
 	}
 
 	issuer   = AcmeInc

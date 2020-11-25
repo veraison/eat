@@ -22,12 +22,8 @@ func TestSubmods_Add_OK(t *testing.T) {
 	err = s.Add("eat-token", emptyEatToken)
 	assert.Nil(t, err)
 
-	err = s.Add(int64(10), Eat{})
-	assert.Nil(t, err)
-
 	assert.Equal(t, Eat{}, s.Get("eat-claims"))
 	assert.Equal(t, emptyEatToken, s.Get("eat-token"))
-	assert.Equal(t, Eat{}, s.Get(int64(10)))
 }
 
 func TestSubmods_Add_FAIL(t *testing.T) {
@@ -47,16 +43,12 @@ func TestSubmods_Add_FAIL(t *testing.T) {
 
 	err = s.Add("eat-token", badSubmodType)
 	assert.EqualError(t, err, "submod must be Eat or []byte")
-
-	badNameType := 56.78
-	err = s.Add(badNameType, Eat{})
-	assert.EqualError(t, err, "submod name must be string or int64, found float64")
 }
 
 func TestSubmods_JSONMarshal_Simple(t *testing.T) {
 	var s Submods
 
-	require.Nil(t, s.Add(int64(0), Eat{Nonce: &Nonces{nonce}}))
+	require.Nil(t, s.Add("0", Eat{Nonce: &Nonces{nonce}}))
 	require.Nil(t, s.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
 
 	expected := `{
@@ -78,7 +70,7 @@ func TestSubmods_JSONMarshal_Nested(t *testing.T) {
 	eat := Eat{Submods: &inner}
 
 	var outer Submods
-	require.Nil(t, outer.Add(int64(0), eat))
+	require.Nil(t, outer.Add("0", eat))
 
 	expected := `{
 		"0": {
@@ -106,7 +98,7 @@ func TestSubmods_JSONUnmarshal_Simple(t *testing.T) {
 	err := json.Unmarshal(tv, &s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get(int64(0)))
+	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get("0"))
 	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
 }
 
@@ -127,19 +119,19 @@ func TestSubmods_JSONUnmarshal_Nested(t *testing.T) {
 	var inner Submods
 	require.Nil(t, inner.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
 
-	assert.Equal(t, Eat{Submods: &inner}, outer.Get(int64(0)))
+	assert.Equal(t, Eat{Submods: &inner}, outer.Get("0"))
 }
 
 func TestSubmods_CBORMarshal_Simple(t *testing.T) {
 	var s Submods
 
-	require.Nil(t, s.Add(int64(0), Eat{Nonce: &Nonces{nonce}}))
+	require.Nil(t, s.Add("0", Eat{Nonce: &Nonces{nonce}}))
 	require.Nil(t, s.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
 
-	// echo "{0: {10: h'deadbeef'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
+	// echo "{\"0\": {10: h'deadbeef'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
 	expected := []byte{
-		0xa2, 0x00, 0xa1, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef, 0x63, 0x78,
-		0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
+		0xa2, 0x61, 0x30, 0xa1, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef, 0x63,
+		0x78, 0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
 	}
 
 	actual, err := em.Marshal(s)
@@ -154,12 +146,12 @@ func TestSubmods_CBORMarshal_Nested(t *testing.T) {
 	eat := Eat{Submods: &inner}
 
 	var outer Submods
-	require.Nil(t, outer.Add(int64(0), eat))
+	require.Nil(t, outer.Add("0", eat))
 
-	//echo "{0: {20: {\"xyz\": h'd83dd241a0'}}}" | diag2cbor.rb | xxd -i
+	// echo "{\"0\": {20: {\"xyz\": h'd83dd241a0'}}}" | diag2cbor.rb | xxd -i
 	expected := []byte{
-		0xa1, 0x00, 0xa1, 0x14, 0xa1, 0x63, 0x78, 0x79, 0x7a, 0x45, 0xd8,
-		0x3d, 0xd2, 0x41, 0xa0,
+		0xa1, 0x61, 0x30, 0xa1, 0x14, 0xa1, 0x63, 0x78, 0x79, 0x7a, 0x45,
+		0xd8, 0x3d, 0xd2, 0x41, 0xa0,
 	}
 
 	actual, err := em.Marshal(outer)
@@ -168,10 +160,10 @@ func TestSubmods_CBORMarshal_Nested(t *testing.T) {
 }
 
 func TestSubmods_CBORUnmarshal_Simple(t *testing.T) {
-	// echo "{0: {10: h'deadbeef'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
+	// echo "{\"0\": {10: h'deadbeef'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
 	tv := []byte{
-		0xa2, 0x00, 0xa1, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef, 0x63, 0x78,
-		0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
+		0xa2, 0x61, 0x30, 0xa1, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef, 0x63,
+		0x78, 0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
 	}
 
 	var s Submods
@@ -179,15 +171,15 @@ func TestSubmods_CBORUnmarshal_Simple(t *testing.T) {
 	err := dm.Unmarshal(tv, &s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get(int64(0)))
+	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get("0"))
 	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
 }
 
 func TestSubmods_CBORUnmarshal_SimpleWithNegativeKey(t *testing.T) {
-	// echo "{-1: {10: h'deadbeef'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
+	// echo "{\"-1\": {10: h'deadbeef'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
 	tv := []byte{
-		0xa2, 0x20, 0xa1, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef, 0x63, 0x78,
-		0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
+		0xa2, 0x62, 0x2d, 0x31, 0xa1, 0x0a, 0x44, 0xde, 0xad, 0xbe, 0xef,
+		0x63, 0x78, 0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
 	}
 
 	var s Submods
@@ -195,15 +187,15 @@ func TestSubmods_CBORUnmarshal_SimpleWithNegativeKey(t *testing.T) {
 	err := dm.Unmarshal(tv, &s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get(int64(-1)))
+	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get("-1"))
 	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
 }
 
 func TestSubmods_CBORUnmarshal_Nested(t *testing.T) {
-	// echo "{ 0: { 20: { \"xyz\": h'd83dd241a0' } } }" | diag2cbor.rb | xxd -i
+	// echo "{ \"0\": { 20: { \"xyz\": h'd83dd241a0' } } }" | diag2cbor.rb | xxd -i
 	tv := []byte{
-		0xa1, 0x00, 0xa1, 0x14, 0xa1, 0x63, 0x78, 0x79, 0x7a, 0x45, 0xd8,
-		0x3d, 0xd2, 0x41, 0xa0,
+		0xa1, 0x61, 0x30, 0xa1, 0x14, 0xa1, 0x63, 0x78, 0x79, 0x7a, 0x45,
+		0xd8, 0x3d, 0xd2, 0x41, 0xa0,
 	}
 
 	var outer Submods
@@ -214,5 +206,5 @@ func TestSubmods_CBORUnmarshal_Nested(t *testing.T) {
 	var inner Submods
 	require.Nil(t, inner.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
 
-	assert.Equal(t, Eat{Submods: &inner}, outer.Get(int64(0)))
+	assert.Equal(t, Eat{Submods: &inner}, outer.Get("0"))
 }
