@@ -65,13 +65,23 @@ func NonceFromHex(text string) (*Nonce, error) {
 		return nil, err
 	}
 
-	return &Nonce{value}, nil
+	return NewNonce(value), nil
 }
 
 // A Nonce is between 8 and 64 bytes
 //    nonce-type = bstr .size (8..64)
 type Nonce struct {
 	value []byte
+}
+
+// NewNonce returns a Nonce initialized with the supplied byte slice
+func NewNonce(v []byte) *Nonce {
+	return &Nonce{v}
+}
+
+// Get returns the nonce value
+func (n Nonce) Get() []byte {
+	return n.value
 }
 
 // MarshalCBOR encodes the Nonce a CBOR byte string.

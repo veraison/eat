@@ -12,12 +12,11 @@ import (
 func TestNonce_MarshalCBOR(t *testing.T) {
 	assert := assert.New(t)
 
-	//   48                  # bytes(8)
-	//      abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
-	expected := []byte{0x48, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}
+	nonce := NewNonce([]byte{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef})
 
-	nonce, err := NonceFromHex("deadbeefdeadbeef")
-	assert.Nil(err)
+	//   48                  # bytes(8)
+	//      deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
+	expected := append([]byte{0x48}, nonce.Get()...)
 
 	actual, err := nonce.MarshalCBOR()
 	assert.Nil(err)
