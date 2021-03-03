@@ -95,7 +95,7 @@ func (s Profile) DecodeProfileJSON(val string) error {
 		for _, s := range strings.Split(val, ".") {
 			num, err := strconv.ParseInt(s, 10, 32)
 			if err != nil {
-				return fmt.Errorf("JSON Decoding Failed for profile: %w", err)
+				return fmt.Errorf("json decoding failed for profile: %w", err)
 			}
 			n := int(num)
 			oid = append(oid, n)
@@ -120,7 +120,7 @@ func (s Profile) MarshalJSON() ([]byte, error) {
 		oid := s.val.(asn1.ObjectIdentifier)
 		return json.Marshal(oid.String())
 	default:
-		return nil, fmt.Errorf("Invalid Profile Type")
+		return nil, fmt.Errorf("invalid profile type")
 	}
 }
 
