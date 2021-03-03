@@ -4,13 +4,12 @@
 package eat
 
 import (
-	"strconv"
+	"encoding/asn1"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
-	"encoding/asn1"
-	cbor "github.com/fxamacker/cbor/v2"
 )
 
 // Profile is either a well formed RFC3986 compliant URI(uri  *url.URL).
@@ -21,46 +20,51 @@ type Profile struct {
 
 // DecodeProfileCBOR decodes from a received CBOR data the profile
 // as either a URL or a Object Identifier
-func (s Profile) DecodeProfileCBOR(val interface{}) error
-{
-	switch t := val.(type) {
+func (s Profile) DecodeProfileCBOR(val interface{}) error {
+	switch val.(type) {
 	case string:
-		if len(val) == 0 {
-			return fmt.Errorf("No valid URL for profile")
+		var value string
+		value = val.(string)
+		if len(value) == 0 {
+			return fmt.Errorf("no valid URL for profile")
 		}
-		s.val, err := url.Parse(s.val)
-		if err != nil {
-			return fmt.Errorf("Failed to parse profile URL: %w", err)
+		lurl, err := url.Parse(value)
+		if err != nil || !lurl.IsAbs() {
+			return fmt.Errorf("profile URL parsing failed: %w", err)
 		}
+		s.val = lurl
 	case []byte:
-		if len(val) == 0 {
-			return fmt.Errorf("No valid OID for profile")
+		var value []byte
+		value = val.([]byte)
+		var profileOID asn1.ObjectIdentifier
+		_, err := asn1.Unmarshal(value, &profileOID)
+		if err != nil {
+			return fmt.Errorf("malformed profile OID detetced")
 		}
-		_, err := asn1.Unmarshal(val, &s.val)
-		if (err != nil) {
-			return fmt.Errorf("MalFormed profile OID detetced")
-		}
+		s.val = profileOID
 	}
-} 
+	return nil
+}
+
 // MarshalCBOR will encode the Profile value either as a CBOR text string(URL),
-// or as byte array 
+// or as byte array
 func (s Profile) MarshalCBOR() ([]byte, error) {
-	switch t := s.val.(type) {
+	switch s.val.(type) {
 	case *url.URL:
 		var uri *url.URL
 		uri = s.val.(*url.URL)
 		return em.Marshal(uri.String())
 
 	case asn1.ObjectIdentifier:
-		var asn1_oid []byte
-
-		asn1_oid, err := asn1.Marshal(s.val)
-		if err != nil{
-			return nil, fmt.Errorf("ASN1 Encoding failed for OID", err)
+		var asn1OID []byte
+		asn1OID, err := asn1.Marshal(s.val)
+		if err != nil {
+			return nil, fmt.Errorf("asn1 encoding failed for OID: %w", err)
 		}
-		return em.Marshal(asn1_oid)
+		return em.Marshal(asn1OID)
+	default:
+		return nil, fmt.Errorf("invalid type for eat profile")
 	}
-	
 }
 
 // UnmarshalCBOR attempts to initialize the Profile from the presented
@@ -69,45 +73,45 @@ func (s Profile) MarshalCBOR() ([]byte, error) {
 func (s *Profile) UnmarshalCBOR(data []byte) error {
 	var val interface{}
 	if len(data) == 0 {
-		return nil
+		return fmt.Errorf("decoding of CBOR data failed: zero length data buffer")
 	}
 	if err := dm.Unmarshal(data, &val); err != nil {
-		return fmt.Errorf("Unmarshal of CBOR data failed: %w", err)
+		return fmt.Errorf("decoding of CBOR data failed: %w", err)
 	}
 	if err := s.DecodeProfileCBOR(val); err != nil {
-		return  fmt.Errorf("Invalid profile data decoded: %w", err) 
+		return fmt.Errorf("invalid profile data: %w", err)
 	}
 	return nil
 }
 
-// DecodeProfileJSON decodes a valid profile, from the received 
+// DecodeProfileJSON decodes a valid profile, from the received
 // JSON string, mapping it to either a URL or an OID
-func (s Profile) DecodeProfileJSON(val string) error{
+func (s Profile) DecodeProfileJSON(val string) error {
 	// First attempt to decode profile as a URL
 	u, err := url.Parse(val)
-	if err != nil || u.IsAbs() {
+	if err != nil || !u.IsAbs() {
 		// Now attempt to decode the same as OID
 		var oid asn1.ObjectIdentifier
-		for _, s := range strings.Split(val, "."){
+		for _, s := range strings.Split(val, ".") {
 			num, err := strconv.ParseInt(s, 10, 32)
-			if err != nil{
-				return ftm.Errorf("JSON Decoding Failed for profile: %w", err)
+			if err != nil {
+				return fmt.Errorf("JSON Decoding Failed for profile: %w", err)
 			}
-			n := int32(num)
+			n := int(num)
 			oid = append(oid, n)
 		}
 		s.val = oid
-	}
-	else {
-		s.val = val
+	} else {
+		s.val = u
 	}
 	return nil
 }
+
 // MarshalJSON encodes the receiver Profile into a JSON string
 func (s Profile) MarshalJSON() ([]byte, error) {
 	// json interoperability oid -- encoded as a string using the well
 	// established dotted-decimal notation (e.g., the text "1.2.250.1").
-	switch t := s.val.(type) {
+	switch s.val.(type) {
 	case *url.URL:
 		var uri *url.URL
 		uri = s.val.(*url.URL)
@@ -129,7 +133,7 @@ func (s *Profile) UnmarshalJSON(data []byte) error {
 	}
 
 	if err := s.DecodeProfileJSON(v); err != nil {
-		return fmt.Errorf("Failed to UnMarshal JSON Profile", err)
+		return fmt.Errorf("failed to unMarshal JSON profile: %w", err)
 	}
 	return nil
 }
