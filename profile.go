@@ -18,30 +18,88 @@ type Profile struct {
 	val interface{}
 }
 
+// NewProfile instantiates a new Profile object from a given input string
+// The input string can either be a well formed URI as string
+// OR it could be a OID formated as a string example "1.2.3.4"
+func NewProfile(urlOrOID string) (*Profile, error) {
+	p := Profile{}
+	if err := p.SetProfile(urlOrOID); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// SetProfile sets the given urlOrOID overwriting a previously stored
+// value
+func (s *Profile) SetProfile(urlOrOID string) error {
+	// First attempt to decode input string as a URL
+	u, err := url.Parse(urlOrOID)
+	if err != nil || !u.IsAbs() {
+		s.val, err = decodeOIDfromString(urlOrOID)
+		if err != nil {
+			return fmt.Errorf("no valid URI or OID supplied as an argument: %w", err)
+		}
+	} else {
+		s.val = u
+	}
+	return nil
+}
+
+// GetProfile returns either a valid URI or OID as strings
+// to the caller
+func (s Profile) GetProfile() (string, error) {
+	switch t := s.val.(type) {
+	case *url.URL:
+		return t.String(), nil
+	case asn1.ObjectIdentifier:
+		return t.String(), nil
+	default:
+		return "", fmt.Errorf("no valid EAT profile")
+	}
+}
+
+// IsURI checks whether a stored profile is a URI
+func (s Profile) IsURI() bool {
+	switch s.val.(type) {
+	case *url.URL:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsOID checks whether a stored profile is an OID
+func (s Profile) IsOID() bool {
+	switch s.val.(type) {
+	case asn1.ObjectIdentifier:
+		return true
+	default:
+		return false
+	}
+}
+
 // DecodeProfileCBOR decodes from a received CBOR data the profile
 // as either a URL or a Object Identifier
-func (s Profile) DecodeProfileCBOR(val interface{}) error {
-	switch val.(type) {
+func (s *Profile) DecodeProfileCBOR(val interface{}) error {
+	switch t := val.(type) {
 	case string:
-		var value string
-		value = val.(string)
-		if len(value) == 0 {
-			return fmt.Errorf("no valid URL for profile")
-		}
-		lurl, err := url.Parse(value)
-		if err != nil || !lurl.IsAbs() {
+		lurl, err := url.Parse(t)
+		if err != nil {
 			return fmt.Errorf("profile URL parsing failed: %w", err)
+		}
+		if !lurl.IsAbs() {
+			return fmt.Errorf("profile URL not in absolute form: %w", err)
 		}
 		s.val = lurl
 	case []byte:
-		var value []byte
-		value = val.([]byte)
 		var profileOID asn1.ObjectIdentifier
-		_, err := asn1.Unmarshal(value, &profileOID)
+		_, err := asn1.Unmarshal(t, &profileOID)
 		if err != nil {
-			return fmt.Errorf("malformed profile OID detetced")
+			return fmt.Errorf("malformed profile OID")
 		}
 		s.val = profileOID
+	default:
+		return fmt.Errorf("decoding failed malformed CBOR")
 	}
 	return nil
 }
@@ -49,21 +107,19 @@ func (s Profile) DecodeProfileCBOR(val interface{}) error {
 // MarshalCBOR will encode the Profile value either as a CBOR text string(URL),
 // or as byte array
 func (s Profile) MarshalCBOR() ([]byte, error) {
-	switch s.val.(type) {
+	switch t := s.val.(type) {
 	case *url.URL:
-		var uri *url.URL
-		uri = s.val.(*url.URL)
-		return em.Marshal(uri.String())
+		return em.Marshal(t.String())
 
 	case asn1.ObjectIdentifier:
 		var asn1OID []byte
-		asn1OID, err := asn1.Marshal(s.val)
+		asn1OID, err := asn1.Marshal(t)
 		if err != nil {
 			return nil, fmt.Errorf("asn1 encoding failed for OID: %w", err)
 		}
 		return em.Marshal(asn1OID)
 	default:
-		return nil, fmt.Errorf("invalid type for eat profile")
+		return nil, fmt.Errorf("invalid type for EAT profile")
 	}
 }
 
@@ -84,23 +140,30 @@ func (s *Profile) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
+func decodeOIDfromString(val string) (asn1.ObjectIdentifier, error) {
+	// Attempt to decode OID from received string
+	var oid asn1.ObjectIdentifier
+	for _, s := range strings.Split(val, ".") {
+		num, err := strconv.ParseInt(s, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract OID from string: %w", err)
+		}
+		n := int(num)
+		oid = append(oid, n)
+	}
+	return oid, nil
+}
+
 // DecodeProfileJSON decodes a valid profile, from the received
 // JSON string, mapping it to either a URL or an OID
-func (s Profile) DecodeProfileJSON(val string) error {
+func (s *Profile) DecodeProfileJSON(val string) error {
 	// First attempt to decode profile as a URL
 	u, err := url.Parse(val)
 	if err != nil || !u.IsAbs() {
-		// Now attempt to decode the same as OID
-		var oid asn1.ObjectIdentifier
-		for _, s := range strings.Split(val, ".") {
-			num, err := strconv.ParseInt(s, 10, 32)
-			if err != nil {
-				return fmt.Errorf("json decoding failed for profile: %w", err)
-			}
-			n := int(num)
-			oid = append(oid, n)
+		s.val, err = decodeOIDfromString(val)
+		if err != nil {
+			return fmt.Errorf("json decode of profile failed: %w", err)
 		}
-		s.val = oid
 	} else {
 		s.val = u
 	}
@@ -111,16 +174,13 @@ func (s Profile) DecodeProfileJSON(val string) error {
 func (s Profile) MarshalJSON() ([]byte, error) {
 	// json interoperability oid -- encoded as a string using the well
 	// established dotted-decimal notation (e.g., the text "1.2.250.1").
-	switch s.val.(type) {
+	switch t := s.val.(type) {
 	case *url.URL:
-		var uri *url.URL
-		uri = s.val.(*url.URL)
-		return json.Marshal(uri.String())
+		return json.Marshal(t.String())
 	case asn1.ObjectIdentifier:
-		oid := s.val.(asn1.ObjectIdentifier)
-		return json.Marshal(oid.String())
+		return json.Marshal(t.String())
 	default:
-		return nil, fmt.Errorf("invalid profile type")
+		return nil, fmt.Errorf("invalid profile type: %T", t)
 	}
 }
 
