@@ -12,8 +12,7 @@ import (
 	"strings"
 )
 
-// Profile is either a well formed RFC3986 compliant URI(uri  *url.URL).
-// or an ObjectIdentifier  ([]int)
+// Profile is either an absolute URI (RFC3986) or an ASN.1 Object Identifier
 type Profile struct {
 	val interface{}
 }
