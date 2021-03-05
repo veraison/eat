@@ -124,7 +124,7 @@ func TestProfile_MarshalCBOR_URL(t *testing.T) {
 }
 
 // TestProfile_UnMarshalCBOR_WithURL tests the CBOR UnMarshaling of profile claim set as URL
-func TestProfile_UnMarshalCBOR_URL(t *testing.T) {
+func TestProfile_UnmarshalCBOR_URL(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
 	assert.Nil(t, err)
@@ -168,8 +168,8 @@ func TestProfile_MarshalCBOR_OID(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-//  TestProfile_UnMarshalCBOR_OID tests the CBOR unmarshaling of profile as decoded as OID
-func TestProfile_UnMarshalCBOR_OID(t *testing.T) {
+//  TestProfile_UnmarshalCBOR_OID tests the CBOR unmarshaling of profile decoded as OID
+func TestProfile_UnmarshalCBOR_OID(t *testing.T) {
 	inputOID := "2.5.2.8192"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
@@ -213,8 +213,8 @@ func TestProfile_MarshalJSON_URL(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// TestProfile_UnMarshalJSON_URL tests the UnMarshaling of a JSON value as URL string
-func TestProfile_UnMarshalJSON_URL(t *testing.T) {
+// TestProfile_UnmarshalJSON_URL tests the Unmarshaling of a JSON value as URL string
+func TestProfile_UnmarshalJSON_URL(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
 	assert.Nil(t, err)
@@ -261,8 +261,8 @@ func TestProfile_MarshalJSON_OID(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// TestProfile_UnMarshalJSON_OID tests the JSON Unmarshaling for OID as profile
-func TestProfile_UnMarshalJSON_OID(t *testing.T) {
+// TestProfile_UnmarshalJSON_OID tests the JSON unmarshaling for OID as profile
+func TestProfile_UnmarshalJSON_OID(t *testing.T) {
 	inputOID := "1.2.3.4"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
@@ -302,7 +302,7 @@ func TestProfile_RoundTrip_CBOR_Long_OID(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expected, actual)
 
-	// Test UnMarshal CBOR
+	// Test Unmarshal CBOR
 	input := actual
 	expectedOID := inputOID
 	err = profile.UnmarshalCBOR(input)

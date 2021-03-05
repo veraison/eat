@@ -19,7 +19,7 @@ const (
 	ASN1LongLenMask = 0x80
 	// ASN1LenBytesMask is used to extract first 7 bits of Length Indicator byte
 	ASN1LenBytesMask = 0x7F
-	// MaxASN1OIDLen is the constant to address the maximum OID length handled in system
+	// MaxASN1OIDLen is the maximum OID length accepted by the implementation
 	MaxASN1OIDLen = 260
 	// MinNumOIDArcs represents the minimum required arcs for a valid OID
 	MinNumOIDArcs = 3
@@ -32,7 +32,8 @@ type Profile struct {
 
 // NewProfile instantiates a Profile object from the given input string
 // The string can either be an absolute URI or an ASN.1 Object Identifier
-// in dotted-decimal notation
+// in dotted-decimal notation. Relative Object Identifiers (e.g., .1.1.29) are
+// not accepted.
 func NewProfile(urlOrOID string) (*Profile, error) {
 	p := Profile{}
 	if err := p.Set(urlOrOID); err != nil {
@@ -70,8 +71,9 @@ func (s Profile) IsOID() bool {
 	return ok
 }
 
-// constructASN1fromVal constructs a TLV ASN1 byte array from an ASN1 value
-// supplied as an input, assumption is a meaningful OID byte array of less than 255 bytes
+// constructASN1fromVal constructs a TLV ASN.1 byte array from an ASN.1 value
+// supplied as an input.  The supplied OID byte array must be less than
+// 255 bytes.
 func constructASN1fromVal(val []byte) ([]byte, error) {
 	var OID [MaxASN1OIDLen]byte
 	asn1OID := OID[:2]
@@ -81,10 +83,10 @@ func constructASN1fromVal(val []byte) ([]byte, error) {
 	} else if len(val) < 256 {
 		// extra one byte is sufficient
 		asn1OID[1] = 1 // Set to 1 to indicate one more byte carries the length
-		asn1OID[1] = asn1OID[1] | ASN1LongLenMask
+		asn1OID[1] |= ASN1LongLenMask
 		asn1OID = append(asn1OID, byte(len(val)))
 	} else {
-		return nil, fmt.Errorf("excessively large OID not handled")
+		return nil, fmt.Errorf("OIDs bigger than %d bytes are not accepted", 256)
 	}
 	asn1OID = append(asn1OID, val...)
 	return asn1OID, nil
@@ -107,34 +109,34 @@ func (s *Profile) decodeProfileCBOR(val interface{}) error {
 		var profileOID asn1.ObjectIdentifier
 		val, err := constructASN1fromVal(t)
 		if err != nil {
-			return fmt.Errorf("could not construct valid ASN1 buffer from ASN1 value: %w", err)
+			return fmt.Errorf("could not construct valid ASN.1 buffer from ASN.1 value: %w", err)
 		}
 		rest, err := asn1.Unmarshal(val, &profileOID)
 		if err != nil {
 			return fmt.Errorf("malformed profile OID")
 		}
 		if len(rest) > 0 {
-			return fmt.Errorf("ASN1 Unmarshal failed, as returned leftover %d bytes", len(rest))
+			return fmt.Errorf("ASN.1 Unmarshal returned with %d leftover bytes", len(rest))
 		}
 		if len(profileOID) < MinNumOIDArcs {
-			return fmt.Errorf("CBOR decoding invalid, num arcs: %d < min OID arcs %d", len(profileOID), MinNumOIDArcs)
+			return fmt.Errorf("ASN.1 OID decoding failed: got %d arcs, expecting at least %d", len(profileOID), MinNumOIDArcs)
 		}
 		s.val = profileOID
 	default:
-		return fmt.Errorf("decoding failed unexpected type for profile: %T", t)
+		return fmt.Errorf("decoding failed: unexpected type for profile: %T", t)
 	}
 	return nil
 }
 
-// extractASNValue removes Type and Len Bytes to generate a value component of encoded ASN
+// extractASNValue extracts the value component from the supplied ASN.1 OID
 func extractASNValue(asn1OID []byte) ([]byte, error) {
 	if asn1OID[0] != ASN1AbsoluteOIDType {
-		return nil, fmt.Errorf("not a valid absoulute ASN1OID")
+		return nil, fmt.Errorf("the supplied value is not an ASN.1 OID")
 	}
 	// offset to default TL bytes
 	byteOffset := 2
 	if asn1OID[1]&ASN1LongLenMask != 0 {
-		byteOffset = byteOffset + int(asn1OID[1]&ASN1LenBytesMask)
+		byteOffset += int(asn1OID[1]&ASN1LenBytesMask)
 	}
 	return asn1OID[byteOffset:], nil
 }
@@ -163,8 +165,8 @@ func (s Profile) MarshalCBOR() ([]byte, error) {
 }
 
 // UnmarshalCBOR attempts to initialize the Profile from the presented
-// CBOR data. The data must be a text string, representing a URL
-// or a byte array representing an Object Identifier
+// CBOR data. The data must be a CBOR text string, representing a URL
+// or a CBOR byte string representing an Object Identifier
 func (s *Profile) UnmarshalCBOR(data []byte) error {
 	var val interface{}
 	if len(data) == 0 {
@@ -194,20 +196,20 @@ func decodeOIDfromString(val string) (asn1.ObjectIdentifier, error) {
 		oid = append(oid, n)
 	}
 	if len(oid) < MinNumOIDArcs {
-		return nil, fmt.Errorf("invalid OID, num arcs: %d < min OID arcs %d", len(oid), MinNumOIDArcs)
+		return nil, fmt.Errorf("invalid OID:  got %d arcs, expecting at least %d", len(oid), MinNumOIDArcs)
 	}
 	return oid, nil
 }
 
-// decodeProfileFromString attempts to decode received string as a URL
-// if it fails then attempts to decode as an OID.
+// decodeProfileFromString attempts to decode the supplied string as a URL,
+// if that fails, it then attempts to decode it as an OID.
 func (s *Profile) decodeProfileFromString(val string) error {
 	// First attempt to decode profile as a URL
 	u, err := url.Parse(val)
 	if err != nil || !u.IsAbs() {
 		val, err := decodeOIDfromString(val)
 		if err != nil {
-			return fmt.Errorf("profile decode failed no valid URL or OID: %w", err)
+			return fmt.Errorf("profile string must be an absolute URL or an ASN.1 OID: %w", err)
 		}
 		s.val = val
 	} else {
@@ -216,16 +218,14 @@ func (s *Profile) decodeProfileFromString(val string) error {
 	return nil
 }
 
-// DecodeProfileJSON decodes a valid profile, from the received
-// JSON string, mapping it to either a URL or an OID
+// decodeProfileJSON attempts at extracting an absolute URI or ASN.1 OID
+// from the supplied JSON string
 func (s *Profile) decodeProfileJSON(val string) error {
 	return s.decodeProfileFromString(val)
 }
 
 // MarshalJSON encodes the receiver Profile into a JSON string
 func (s Profile) MarshalJSON() ([]byte, error) {
-	// json interoperability oid -- encoded as a string using the well
-	// established dotted-decimal notation (e.g., the text "1.2.250.1").
 	switch t := s.val.(type) {
 	case *url.URL:
 		return json.Marshal(t.String())
@@ -245,7 +245,7 @@ func (s *Profile) UnmarshalJSON(data []byte) error {
 	}
 
 	if err := s.decodeProfileJSON(v); err != nil {
-		return fmt.Errorf("ecoding of profile failed: %w", err)
+		return fmt.Errorf("encoding of profile failed: %w", err)
 	}
 	return nil
 }
