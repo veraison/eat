@@ -23,7 +23,7 @@ func TestProfile_GetSet_Basic_URL_OK(t *testing.T) {
 	expectedURL := inputURL
 	actualURL, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, actualURL, expectedURL)
+	assert.Equal(t, expectedURL, actualURL)
 	assert.True(t, profile.IsURI())
 
 	inputURL = "https://samplenewwebsite.co.uk"
@@ -32,7 +32,7 @@ func TestProfile_GetSet_Basic_URL_OK(t *testing.T) {
 	expectedURL = inputURL
 	actualURL, err = profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, actualURL, expectedURL)
+	assert.Equal(t, expectedURL, actualURL)
 	assert.True(t, profile.IsURI())
 }
 
@@ -64,7 +64,7 @@ func TestProfile_GetSet_Basic_OID_OK(t *testing.T) {
 	expectedOID := inputOID
 	actualOID, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, actualOID, expectedOID)
+	assert.Equal(t, expectedOID, actualOID)
 	assert.True(t, profile.IsOID())
 
 	inputOID = "24.43.27.88"
@@ -73,7 +73,7 @@ func TestProfile_GetSet_Basic_OID_OK(t *testing.T) {
 	expectedOID = inputOID
 	actualOID, err = profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedOID, expectedOID)
+	assert.Equal(t, expectedOID, actualOID)
 	assert.True(t, profile.IsOID())
 }
 
@@ -164,7 +164,7 @@ func TestProfile_UnmarshalCBOR_URL_OK(t *testing.T) {
 	assert.Nil(t, err)
 	actualURL, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, actualURL, expectedURL)
+	assert.Equal(t, expectedURL, actualURL)
 }
 
 // TestProfile_MarshalCBOR_OID_OK tests the valid CBOR marshaling of profile set as OID
