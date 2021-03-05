@@ -11,8 +11,8 @@ type Eat struct {
 	UEID          *UEID          `cbor:"11,keyasint,omitempty" json:"ueid,omitempty"`
 	Origination   *StringOrURI   `cbor:"12,keyasint,omitempty" json:"origination,omitempty"`
 	OemID         *[]byte        `cbor:"13,keyasint,omitempty" json:"oemid,omitempty"`
-	SecurityLevel *SecurityLevel `cbor:"14,keyasint,omitempty" json:"seclevel,omitempty"`
-	SecureBoot    *bool          `cbor:"15,keyasint,omitempty" json:"secboot,omitempty"`
+	SecurityLevel *SecurityLevel `cbor:"14,keyasint,omitempty" json:"security-level,omitempty"`
+	SecureBoot    *bool          `cbor:"15,keyasint,omitempty" json:"secure-boot,omitempty"`
 	Debug         *Debug         `cbor:"16,keyasint,omitempty" json:"debug-disable,omitempty"`
 	Location      *Location      `cbor:"17,keyasint,omitempty" json:"location,omitempty"`
 	Profile       *Profile       `cbor:"18,keyasint,omitempty" json:"eat-profile,omitempty"`
