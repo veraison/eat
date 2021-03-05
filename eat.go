@@ -15,6 +15,7 @@ type Eat struct {
 	SecureBoot    *bool          `cbor:"15,keyasint,omitempty" json:"secure-boot,omitempty"`
 	Debug         *Debug         `cbor:"16,keyasint,omitempty" json:"debug-disable,omitempty"`
 	Location      *Location      `cbor:"17,keyasint,omitempty" json:"location,omitempty"`
+	Profile       *Profile       `cbor:"18,keyasint,omitempty" json:"eat-profile,omitempty"`
 	Uptime        *uint          `cbor:"19,keyasint,omitempty" json:"uptime,omitempty"`
 	Submods       *Submods       `cbor:"20,keyasint,omitempty" json:"submods,omitempty"`
 
