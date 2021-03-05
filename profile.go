@@ -20,11 +20,11 @@ const (
 )
 
 const (
-	// asn1AbsolueOIDType represents the Type number of Absolute OID ASN Encoding
+	// asn1AbsolueOIDType is the type of an ASN.1 Object Identifier
 	asn1AbsolueOIDType = 0x06
-	// asn1LongLenMask is used to mask bit 8 of Length Indicator byte
+	// asn1LongLenMask is used to mask bit 8 of the length byte
 	asn1LongLenMask = 0x80
-	// asn1LenBytesMask is used to extract first 7 bits of Length Indicator byte
+	// asn1LenBytesMask is used to extract the first 7 bits from the length byte
 	asn1LenBytesMask = 0x7F
 )
 
@@ -106,7 +106,7 @@ func (s *Profile) decodeProfile(val interface{}) error {
 			return fmt.Errorf("profile URL parsing failed: %w", err)
 		}
 		if !u.IsAbs() {
-			return fmt.Errorf("profile URL not in absolute form: %w", err)
+			return fmt.Errorf("profile URL not in absolute form")
 		}
 		s.val = u
 	case []byte:

@@ -141,8 +141,7 @@ func TestProfile_MarshalCBOR_URL_NOK(t *testing.T) {
 		0x69, 0x6E, 0x67,
 	}
 	expectedError = `invalid profile data: `
-	expectedError += `profile URL not in absolute form: `
-	expectedError += `%!w(<nil>)`
+	expectedError += `profile URL not in absolute form`
 	err = profile.UnmarshalCBOR(data)
 	assert.EqualError(t, err, expectedError)
 }
@@ -254,7 +253,6 @@ func TestProfile_UnmarshalJSON_URL_OK(t *testing.T) {
 	actualURL, err := profile.Get()
 	assert.Nil(t, err)
 	assert.Equal(t, expectedURL, actualURL)
-
 }
 
 // TestProfile_UnmarshalJSON_URL_NOK tests the invalid case of Unmarshaling of a JSON value as URL string
@@ -280,7 +278,6 @@ func TestProfile_UnmarshalJSON_URL_NOK(t *testing.T) {
 	expectedError += `strconv.Atoi: parsing "�xtp://example": invalid syntax`
 	err = profile.UnmarshalJSON(data)
 	assert.EqualError(t, err, expectedError)
-
 }
 
 // TestProfile_MarshalJSON_OID_OK validates the JSON Marshaling of OID as profile
