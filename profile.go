@@ -13,16 +13,19 @@ import (
 )
 
 const (
-	// ASN1AbsoluteOIDType represents the Type number of Absolute OID ASN Encoding
-	ASN1AbsoluteOIDType = 0x06
-	// ASN1LongLenMask is used to mask bit 8 of Length Indicator byte
-	ASN1LongLenMask = 0x80
-	// ASN1LenBytesMask is used to extract first 7 bits of Length Indicator byte
-	ASN1LenBytesMask = 0x7F
 	// MaxASN1OIDLen is the maximum OID length accepted by the implementation
-	MaxASN1OIDLen = 260
+	MaxASN1OIDLen = 255
 	// MinNumOIDArcs represents the minimum required arcs for a valid OID
 	MinNumOIDArcs = 3
+)
+
+const (
+	// asn1AbsolueOIDType represents the Type number of Absolute OID ASN Encoding
+	asn1AbsolueOIDType = 0x06
+	// asn1LongLenMask is used to mask bit 8 of Length Indicator byte
+	asn1LongLenMask = 0x80
+	// asn1LenBytesMask is used to extract first 7 bits of Length Indicator byte
+	asn1LenBytesMask = 0x7F
 )
 
 // Profile is either an absolute URI (RFC3986) or an ASN.1 Object Identifier
@@ -72,29 +75,30 @@ func (s Profile) IsOID() bool {
 }
 
 // constructASN1fromVal constructs a TLV ASN.1 byte array from an ASN.1 value
-// supplied as an input.  The supplied OID byte array must be less than
-// 255 bytes.
+// supplied as an input.  The supplied OID byte array must be upto
+// MaxASN1OIDLen bytes.
 func constructASN1fromVal(val []byte) ([]byte, error) {
-	var OID [MaxASN1OIDLen]byte
+	const maxTLOffset = 3
+	var OID [MaxASN1OIDLen + maxTLOffset]byte
 	asn1OID := OID[:2]
-	asn1OID[0] = ASN1AbsoluteOIDType
+	asn1OID[0] = asn1AbsolueOIDType
 	if len(val) < 127 {
 		asn1OID[1] = byte(len(val))
-	} else if len(val) < 256 {
+	} else if len(val) <= MaxASN1OIDLen {
 		// extra one byte is sufficient
 		asn1OID[1] = 1 // Set to 1 to indicate one more byte carries the length
-		asn1OID[1] |= ASN1LongLenMask
+		asn1OID[1] |= asn1LongLenMask
 		asn1OID = append(asn1OID, byte(len(val)))
 	} else {
-		return nil, fmt.Errorf("OIDs bigger than %d bytes are not accepted", 256)
+		return nil, fmt.Errorf("OIDs greater than %d bytes are not accepted", MaxASN1OIDLen)
 	}
 	asn1OID = append(asn1OID, val...)
 	return asn1OID, nil
 }
 
-// DecodeProfileCBOR decodes from a received CBOR data the profile
+// decodeProfile decodes from a received CBOR data the profile
 // as either a URL or a Object Identifier
-func (s *Profile) decodeProfileCBOR(val interface{}) error {
+func (s *Profile) decodeProfile(val interface{}) error {
 	switch t := val.(type) {
 	case string:
 		u, err := url.Parse(t)
@@ -130,13 +134,13 @@ func (s *Profile) decodeProfileCBOR(val interface{}) error {
 
 // extractASNValue extracts the value component from the supplied ASN.1 OID
 func extractASNValue(asn1OID []byte) ([]byte, error) {
-	if asn1OID[0] != ASN1AbsoluteOIDType {
+	if asn1OID[0] != asn1AbsolueOIDType {
 		return nil, fmt.Errorf("the supplied value is not an ASN.1 OID")
 	}
 	// offset to default TL bytes
 	byteOffset := 2
-	if asn1OID[1]&ASN1LongLenMask != 0 {
-		byteOffset += int(asn1OID[1]&ASN1LenBytesMask)
+	if asn1OID[1]&asn1LongLenMask != 0 {
+		byteOffset += int(asn1OID[1] & asn1LenBytesMask)
 	}
 	return asn1OID[byteOffset:], nil
 }
@@ -175,7 +179,7 @@ func (s *Profile) UnmarshalCBOR(data []byte) error {
 	if err := dm.Unmarshal(data, &val); err != nil {
 		return fmt.Errorf("CBOR decoding of profile failed: %w", err)
 	}
-	if err := s.decodeProfileCBOR(val); err != nil {
+	if err := s.decodeProfile(val); err != nil {
 		return fmt.Errorf("invalid profile data: %w", err)
 	}
 	return nil
