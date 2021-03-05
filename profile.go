@@ -200,7 +200,7 @@ func decodeOIDfromString(val string) (asn1.ObjectIdentifier, error) {
 		oid = append(oid, n)
 	}
 	if len(oid) < MinNumOIDArcs {
-		return nil, fmt.Errorf("invalid OID:  got %d arcs, expecting at least %d", len(oid), MinNumOIDArcs)
+		return nil, fmt.Errorf("invalid OID: got %d arcs, expecting at least %d", len(oid), MinNumOIDArcs)
 	}
 	return oid, nil
 }

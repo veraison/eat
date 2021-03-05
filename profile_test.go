@@ -14,79 +14,96 @@ const (
 	EmptyOID       = ""
 )
 
-// TestProfile_GetSet_Basic_URL tests the basic setting of Profile as URL string
-func TestProfile_GetSet_Basic_URL(t *testing.T) {
+// TestProfile_GetSet_Basic_URL_OK tests the valid setting of Profile as URL string
+func TestProfile_GetSet_Basic_URL_OK(t *testing.T) {
 	inputURL := "https://samplewebsite.com"
-
 	profile, err := NewProfile(inputURL)
 	assert.Nil(t, err)
 
-	expectedURL, err := profile.Get()
+	expectedURL := inputURL
+	actualURL, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedURL, inputURL)
+	assert.Equal(t, actualURL, expectedURL)
 	assert.True(t, profile.IsURI())
 
 	inputURL = "https://samplenewwebsite.co.uk"
 	err = profile.Set(inputURL)
 	assert.Nil(t, err)
-
-	expectedURL, err = profile.Get()
+	expectedURL = inputURL
+	actualURL, err = profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedURL, inputURL)
+	assert.Equal(t, actualURL, expectedURL)
 	assert.True(t, profile.IsURI())
-
-	// Negative test cases, below
-	inputURL = InvalidURL
-	err = profile.Set(inputURL)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "profile decode failed no valid URL or OID")
-
-	inputURL = EmptyURL
-	err = profile.Set(inputURL)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "profile decode failed no valid URL or OID")
 }
 
-// TestProfile_GetSet_Basic_OID tests the saving and retrieval of OID as profile
-func TestProfile_GetSet_Basic_OID(t *testing.T) {
+// TestProfile_GetSet_Basic_URL_NOK tests the invalid setting of Profile as URL string
+func TestProfile_GetSet_Basic_URL_NOK(t *testing.T) {
+	profile := &Profile{}
+
+	// Negative test cases, below
+	inputURL := InvalidURL
+	expectedError := `profile string must be an absolute URL or an ASN.1 OID: `
+	expectedError += `failed to extract OID from string: `
+	expectedError += `strconv.Atoi: parsing "abcd": invalid syntax`
+	err := profile.Set(inputURL)
+	assert.EqualError(t, err, expectedError)
+
+	inputURL = EmptyURL
+	expectedError = `profile string must be an absolute URL or an ASN.1 OID: `
+	expectedError += `no valid OID`
+	err = profile.Set(inputURL)
+	assert.EqualError(t, err, expectedError)
+}
+
+// TestProfile_GetSet_Basic_OID_OK tests the valid case of saving and retrieval of OID as profile
+func TestProfile_GetSet_Basic_OID_OK(t *testing.T) {
 	inputOID := "1.2.3.4"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
 
-	expectedOID, err := profile.Get()
+	expectedOID := inputOID
+	actualOID, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedOID, inputOID)
+	assert.Equal(t, actualOID, expectedOID)
 	assert.True(t, profile.IsOID())
 
 	inputOID = "24.43.27.88"
 	err = profile.Set(inputOID)
 	assert.Nil(t, err)
-
-	expectedOID, err = profile.Get()
+	expectedOID = inputOID
+	actualOID, err = profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedOID, inputOID)
+	assert.Equal(t, expectedOID, expectedOID)
 	assert.True(t, profile.IsOID())
-
-	// Negative test cases below
-	// Add a test for OID less than minimum arcs
-	inputOID = "56.78"
-	err = profile.Set(inputOID)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "invalid OID, num arcs: 2 < min OID arcs 3")
-
-	inputOID = InvalidOID
-	err = profile.Set(inputOID)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "failed to extract OID from string")
-
-	inputOID = EmptyOID
-	err = profile.Set(inputOID)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "no valid OID")
 }
 
-// TestProfileURI_MarshalCBOROK tests the CBOR marshaling of profile been set as an URI
-func TestProfile_MarshalCBOR_URL(t *testing.T) {
+// TestProfile_GetSet_Basic_OID_NOK tests the invalid case of saving of OID as profile
+func TestProfile_GetSet_Basic_OID_NOK(t *testing.T) {
+	profile := &Profile{}
+	// Add a test for OID less than minimum arcs
+	inputOID := "56.78"
+	expectedError := `profile string must be an absolute URL or an ASN.1 OID: `
+	expectedError += `invalid OID: `
+	expectedError += `got 2 arcs, expecting at least 3`
+	err := profile.Set(inputOID)
+	assert.EqualError(t, err, expectedError)
+
+	inputOID = InvalidOID
+	expectedError = `profile string must be an absolute URL or an ASN.1 OID: `
+	expectedError += `failed to extract OID from string: `
+	expectedError += `strconv.Atoi: parsing "xxxx": invalid syntax`
+	err = profile.Set(inputOID)
+	assert.EqualError(t, err, expectedError)
+
+	inputOID = EmptyOID
+	expectedError = `profile string must be an absolute URL or an ASN.1 OID: `
+	expectedError += `no valid OID`
+	err = profile.Set(inputOID)
+	assert.EqualError(t, err, expectedError)
+}
+
+// TestProfile_MarshalCBOR_URL_OK tests the valid case of CBOR marshaling of profile been set as an URI
+func TestProfile_MarshalCBOR_URL_OK(t *testing.T) {
 	urlText := "http://example.com"
 	profile, err := NewProfile(urlText)
 	assert.Nil(t, err)
@@ -99,32 +116,39 @@ func TestProfile_MarshalCBOR_URL(t *testing.T) {
 		0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d,
 	}
 
-	// Negative Test Cases
 	actual, err := profile.MarshalCBOR()
 	assert.Nil(t, err)
 	assert.Equal(t, expected, actual)
+}
 
+// TestProfile_MarshalCBOR_URL_NOK tests the invalid case of CBOR marshaling of profile been set as an URI
+func TestProfile_MarshalCBOR_URL_NOK(t *testing.T) {
+	profile := &Profile{}
 	// (corrupted len byte)
 	data := []byte{
 		0x72, 0x88, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65,
 		0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d,
 	}
-	err = profile.UnmarshalCBOR(data)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "invalid UTF-8 string")
+	expectedError := `CBOR decoding of profile failed: `
+	expectedError += `cbor: `
+	expectedError += `invalid UTF-8 string`
+	err := profile.UnmarshalCBOR(data)
+	assert.EqualError(t, err, expectedError)
 
 	// (malformed profile as CBOR )
 	data = []byte{
 		0x6B, 0x74, 0x65, 0x78, 0x74, 0x20, 0x73, 0x74, 0x72,
 		0x69, 0x6E, 0x67,
 	}
+	expectedError = `invalid profile data: `
+	expectedError += `profile URL not in absolute form: `
+	expectedError += `%!w(<nil>)`
 	err = profile.UnmarshalCBOR(data)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "invalid profile data")
+	assert.EqualError(t, err, expectedError)
 }
 
-// TestProfile_UnMarshalCBOR_WithURL tests the CBOR UnMarshaling of profile claim set as URL
-func TestProfile_UnmarshalCBOR_URL(t *testing.T) {
+// TestProfile_UnmarshalCBOR_URL_OK tests the valid case of CBOR UnMarshaling of profile claim set as URL
+func TestProfile_UnmarshalCBOR_URL_OK(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
 	assert.Nil(t, err)
@@ -135,18 +159,17 @@ func TestProfile_UnmarshalCBOR_URL(t *testing.T) {
 		0x72, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65,
 		0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d,
 	}
-
+	expectedURL := inputURL
 	err = profile.UnmarshalCBOR(data)
 	assert.Nil(t, err)
-	recvURL, err := profile.Get()
+	actualURL, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, inputURL, recvURL)
+	assert.Equal(t, actualURL, expectedURL)
 }
 
-// TestProfile_MarshalCBOR_OID tests the CBOR marshaling of profile set as OID
-func TestProfile_MarshalCBOR_OID(t *testing.T) {
+// TestProfile_MarshalCBOR_OID_OK tests the valid CBOR marshaling of profile set as OID
+func TestProfile_MarshalCBOR_OID_OK(t *testing.T) {
 	inputOID := "2.5.2.8192"
-
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
 	expected := []byte{
@@ -168,8 +191,8 @@ func TestProfile_MarshalCBOR_OID(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-//  TestProfile_UnmarshalCBOR_OID tests the CBOR unmarshaling of profile decoded as OID
-func TestProfile_UnmarshalCBOR_OID(t *testing.T) {
+//  TestProfile_UnmarshalCBOR_OID_OK tests the valid CBOR unmarshaling of profile decoded as OID
+func TestProfile_UnmarshalCBOR_OID_OK(t *testing.T) {
 	inputOID := "2.5.2.8192"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
@@ -177,11 +200,12 @@ func TestProfile_UnmarshalCBOR_OID(t *testing.T) {
 	input := []byte{
 		0x44, 0x55, 0x02, 0xC0, 0x00,
 	}
+	expectedOID := inputOID
 	err = profile.UnmarshalCBOR(input)
 	assert.Nil(t, err)
-	expectedOID, err := profile.Get()
+	actualOID, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedOID, inputOID)
+	assert.Equal(t, expectedOID, actualOID)
 
 	// Section 3.1 of https://tools.ietf.org/html/draft-ietf-cbor-tags-oid-05#section-3
 	inputOID = "2.16.840.1.101.3.4.2.1"
@@ -190,15 +214,16 @@ func TestProfile_UnmarshalCBOR_OID(t *testing.T) {
 	input = []byte{
 		0x49, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,
 	}
+	expectedOID = inputOID
 	err = profile.UnmarshalCBOR(input)
 	assert.Nil(t, err)
-	expectedOID, err = profile.Get()
+	actualOID, err = profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedOID, inputOID)
+	assert.Equal(t, expectedOID, actualOID)
 }
 
-// TestProfile_MarshalJSON_URL tests the JSON Marshaling for a known URL
-func TestProfile_MarshalJSON_URL(t *testing.T) {
+// TestProfile_MarshalJSON_URL_OK tests the JSON Marshaling for a known URL
+func TestProfile_MarshalJSON_URL_OK(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
 	assert.Nil(t, err)
@@ -213,8 +238,8 @@ func TestProfile_MarshalJSON_URL(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// TestProfile_UnmarshalJSON_URL tests the Unmarshaling of a JSON value as URL string
-func TestProfile_UnmarshalJSON_URL(t *testing.T) {
+// TestProfile_UnmarshalJSON_URL_OK tests the Unmarshaling of a JSON value as URL string
+func TestProfile_UnmarshalJSON_URL_OK(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
 	assert.Nil(t, err)
@@ -223,35 +248,43 @@ func TestProfile_UnmarshalJSON_URL(t *testing.T) {
 		0x22, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65, 0x78,
 		0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d, 0x22,
 	}
-
+	expectedURL := inputURL
 	err = profile.UnmarshalJSON(data)
 	assert.Nil(t, err)
-	recvURL, err := profile.Get()
+	actualURL, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, inputURL, recvURL)
+	assert.Equal(t, expectedURL, actualURL)
 
-	// Negative Test Cases
+}
+
+// TestProfile_UnmarshalJSON_URL_NOK tests the invalid case of Unmarshaling of a JSON value as URL string
+func TestProfile_UnmarshalJSON_URL_NOK(t *testing.T) {
+	profile := &Profile{}
 	// Corrupted Header
-	data = []byte{
+	data := []byte{
 		0x10, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65, 0x10,
 	}
-	err = profile.UnmarshalJSON(data)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "invalid character")
+
+	expectedError := `invalid character '\x10' looking for beginning of value`
+	err := profile.UnmarshalJSON(data)
+	assert.EqualError(t, err, expectedError)
 
 	// Invalid Input data as string
 	data = []byte{
 		0x22, 0x88, 0x78, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65, 0x78,
 		0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d, 0x22,
 	}
+	expectedError = `encoding of profile failed: `
+	expectedError += `profile string must be an absolute URL or an ASN.1 OID: `
+	expectedError += `failed to extract OID from string: `
+	expectedError += `strconv.Atoi: parsing "�xtp://example": invalid syntax`
 	err = profile.UnmarshalJSON(data)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "failed to extract OID")
+	assert.EqualError(t, err, expectedError)
 
 }
 
-// TestProfile_MarshalJSON_OID validates the JSON Marshaling of OID as profile
-func TestProfile_MarshalJSON_OID(t *testing.T) {
+// TestProfile_MarshalJSON_OID_OK validates the JSON Marshaling of OID as profile
+func TestProfile_MarshalJSON_OID_OK(t *testing.T) {
 	inputOID := "2.5.2.1"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
@@ -261,8 +294,8 @@ func TestProfile_MarshalJSON_OID(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// TestProfile_UnmarshalJSON_OID tests the JSON unmarshaling for OID as profile
-func TestProfile_UnmarshalJSON_OID(t *testing.T) {
+// TestProfile_UnmarshalJSON_OID_OK tests the JSON unmarshaling for OID as profile
+func TestProfile_UnmarshalJSON_OID_OK(t *testing.T) {
 	inputOID := "1.2.3.4"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
@@ -270,9 +303,9 @@ func TestProfile_UnmarshalJSON_OID(t *testing.T) {
 	err = profile.UnmarshalJSON(input)
 	assert.Nil(t, err)
 	expectedOID := "2.5.2.1"
-	receivedOID, err := profile.Get()
+	actualOID, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedOID, receivedOID)
+	assert.Equal(t, expectedOID, actualOID)
 
 	// Partial OID test
 	inputOID = ".2.3.4"
@@ -281,8 +314,8 @@ func TestProfile_UnmarshalJSON_OID(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to extract OID from string")
 }
 
-// TestProfile_RoundTrip_CBOR_Long_OID, tests for a round trip encode/decode of
-func TestProfile_RoundTrip_CBOR_Long_OID(t *testing.T) {
+// TestProfile_RoundTrip_CBOR_Long_OID_OK, tests for a round trip encode/decode of
+func TestProfile_RoundTrip_CBOR_Long_OID_OK(t *testing.T) {
 	inputOID := "1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1.1.3.6.1.4.1.2706.123.1.2.1"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
@@ -307,7 +340,7 @@ func TestProfile_RoundTrip_CBOR_Long_OID(t *testing.T) {
 	expectedOID := inputOID
 	err = profile.UnmarshalCBOR(input)
 	assert.Nil(t, err)
-	receivedOID, err := profile.Get()
+	actualOID, err := profile.Get()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedOID, receivedOID)
+	assert.Equal(t, expectedOID, actualOID)
 }
