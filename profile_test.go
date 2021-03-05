@@ -75,7 +75,7 @@ func TestProfile_GetSet_Basic_OID(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid OID, num arcs: 2 < min OID arcs 3")
 
 	inputOID = InvalidOID
-	err = profile.Set(InvalidOID)
+	err = profile.Set(inputOID)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "failed to extract OID from string")
 
@@ -85,7 +85,7 @@ func TestProfile_GetSet_Basic_OID(t *testing.T) {
 	assert.Contains(t, err.Error(), "no valid OID")
 }
 
-// TestProfileURI_MarshalCBOROK tests the CBOR marshalling of profile been set as an URI
+// TestProfileURI_MarshalCBOROK tests the CBOR marshaling of profile been set as an URI
 func TestProfile_MarshalCBOR_URL(t *testing.T) {
 	urlText := "http://example.com"
 	profile, err := NewProfile(urlText)
@@ -123,7 +123,7 @@ func TestProfile_MarshalCBOR_URL(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid profile data")
 }
 
-// TestProfile_UnMarshalCBOR_WithURL tests the CBOR UnMarshalling of profile claim set as URL
+// TestProfile_UnMarshalCBOR_WithURL tests the CBOR UnMarshaling of profile claim set as URL
 func TestProfile_UnMarshalCBOR_URL(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
@@ -197,7 +197,7 @@ func TestProfile_UnMarshalCBOR_OID(t *testing.T) {
 	assert.Equal(t, expectedOID, inputOID)
 }
 
-// TestProfile_MarshalJSON_URL tests the JSON Marshalling for a known URL
+// TestProfile_MarshalJSON_URL tests the JSON Marshaling for a known URL
 func TestProfile_MarshalJSON_URL(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
@@ -213,7 +213,7 @@ func TestProfile_MarshalJSON_URL(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// TestProfile_UnMarshalJSON_URL tests the UnMarshalling of a JSON value as URL string
+// TestProfile_UnMarshalJSON_URL tests the UnMarshaling of a JSON value as URL string
 func TestProfile_UnMarshalJSON_URL(t *testing.T) {
 	inputURL := "http://example.com"
 	profile, err := NewProfile(inputURL)
@@ -227,6 +227,7 @@ func TestProfile_UnMarshalJSON_URL(t *testing.T) {
 	err = profile.UnmarshalJSON(data)
 	assert.Nil(t, err)
 	recvURL, err := profile.Get()
+	assert.Nil(t, err)
 	assert.Equal(t, inputURL, recvURL)
 
 	// Negative Test Cases
@@ -249,7 +250,7 @@ func TestProfile_UnMarshalJSON_URL(t *testing.T) {
 
 }
 
-// TestProfile_MarshalJSON_OID validates the JSON Marshalling of OID as profile
+// TestProfile_MarshalJSON_OID validates the JSON Marshaling of OID as profile
 func TestProfile_MarshalJSON_OID(t *testing.T) {
 	inputOID := "2.5.2.1"
 	profile, err := NewProfile(inputOID)
@@ -260,13 +261,14 @@ func TestProfile_MarshalJSON_OID(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// TestProfile_UnMarshalJSON_OID tests the JSON Unmarshalling for OID as profile
+// TestProfile_UnMarshalJSON_OID tests the JSON Unmarshaling for OID as profile
 func TestProfile_UnMarshalJSON_OID(t *testing.T) {
 	inputOID := "1.2.3.4"
 	profile, err := NewProfile(inputOID)
 	assert.Nil(t, err)
 	input := []byte(`"2.5.2.1"`)
-	profile.UnmarshalJSON(input)
+	err = profile.UnmarshalJSON(input)
+	assert.Nil(t, err)
 	expectedOID := "2.5.2.1"
 	receivedOID, err := profile.Get()
 	assert.Nil(t, err)
@@ -274,7 +276,7 @@ func TestProfile_UnMarshalJSON_OID(t *testing.T) {
 
 	// Partial OID test
 	inputOID = ".2.3.4"
-	profile, err = NewProfile(inputOID)
+	_, err = NewProfile(inputOID)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "failed to extract OID from string")
 }

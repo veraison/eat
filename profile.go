@@ -19,7 +19,7 @@ const (
 	ASN1LongLenMask = 0x80
 	// ASN1LenBytesMask is used to extract first 7 bits of Length Indicator byte
 	ASN1LenBytesMask = 0x7F
-	// MaxASN1OIDLen is the constant to adress the maximum OID length handled in system
+	// MaxASN1OIDLen is the constant to address the maximum OID length handled in system
 	MaxASN1OIDLen = 260
 	// MinNumOIDArcs represents the minimum required arcs for a valid OID
 	MinNumOIDArcs = 3
