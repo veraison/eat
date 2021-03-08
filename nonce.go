@@ -18,6 +18,12 @@ import (
 //    )
 type Nonces []Nonce
 
+// nonce-type = bstr .size (8..64)
+const (
+	MinNonceSize = 8
+	MaxNonceSize = 64
+)
+
 // MarshalCBOR encodes Nonces as a byte string, in case there is only
 // one, or an array of byte strings if there are multiple.
 func (ns Nonces) MarshalCBOR() ([]byte, error) {
@@ -65,7 +71,7 @@ func NonceFromHex(text string) (*Nonce, error) {
 		return nil, err
 	}
 
-	return NewNonce(value), nil
+	return NewNonce(value)
 }
 
 // A Nonce is between 8 and 64 bytes
@@ -74,9 +80,26 @@ type Nonce struct {
 	value []byte
 }
 
-// NewNonce returns a Nonce initialized with the supplied byte slice
-func NewNonce(v []byte) *Nonce {
-	return &Nonce{v}
+func isValidNonce(v []byte) error {
+	nonceSize := len(v)
+	if nonceSize < MinNonceSize || nonceSize > MaxNonceSize {
+		return fmt.Errorf(
+			"a nonce must be between %d and %d bytes long; found %d",
+			MinNonceSize, MaxNonceSize, nonceSize,
+		)
+	}
+	return nil
+}
+
+// NewNonce returns a Nonce initialized with the supplied byte slice or an error
+// if the supplied buffer is either too big (more than 64 bytes) or too small
+// (less than 8 bytes)
+func NewNonce(v []byte) (*Nonce, error) {
+	if err := isValidNonce(v); err != nil {
+		return nil, err
+	}
+
+	return &Nonce{v}, nil
 }
 
 // Get returns the nonce value
@@ -105,11 +128,7 @@ func (n *Nonce) UnmarshalCBOR(data []byte) error {
 // Validate checks that the underlying value of the Nonce is between 8 and 64
 // bytes, as is required by the EAT spec.
 func (n Nonce) Validate() error {
-	vlen := len(n.value)
-	if vlen > 64 || vlen < 8 {
-		return fmt.Errorf("a nonce must be between 8 and 64 bytes long; found %v", vlen)
-	}
-	return nil
+	return isValidNonce(n.value)
 }
 
 // MarshalJSON encodes the receiver Nonces as a JSON string
