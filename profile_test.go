@@ -128,8 +128,28 @@ func TestProfile_MarshalCBOR_URL_OK(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// TestProfile_MarshalCBOR_URL_NOK tests the invalid case of CBOR marshaling of profile been set as an URI
-func TestProfile_MarshalCBOR_URL_NOK(t *testing.T) {
+// TestProfile_UnmarshalCBOR_URL_OK tests the valid case of CBOR Unmarshaling of profile claim set as URL
+func TestProfile_UnmarshalCBOR_URL_OK(t *testing.T) {
+	inputURL := "http://example.com"
+	profile, err := NewProfile(inputURL)
+	assert.Nil(t, err)
+
+	//    72                                   # text(18)
+	//          687474703a2f2f6578616d706c652e636f6d # "http://example.com"
+	data := []byte{
+		0x72, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65,
+		0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d,
+	}
+	expectedURL := inputURL
+	err = profile.UnmarshalCBOR(data)
+	assert.Nil(t, err)
+	actualURL, err := profile.Get()
+	assert.Nil(t, err)
+	assert.Equal(t, expectedURL, actualURL)
+}
+
+// TestProfile_UnMarshalCBOR_URL_NOK tests the invalid case of CBOR Unmarshaling of profile
+func TestProfile_UnMarshalCBOR_URL_NOK(t *testing.T) {
 	profile := &Profile{}
 	// (corrupted len byte)
 	data := []byte{
@@ -151,26 +171,13 @@ func TestProfile_MarshalCBOR_URL_NOK(t *testing.T) {
 	expectedError += `profile URL not in absolute form`
 	err = profile.UnmarshalCBOR(data)
 	assert.EqualError(t, err, expectedError)
-}
 
-// TestProfile_UnmarshalCBOR_URL_OK tests the valid case of CBOR UnMarshaling of profile claim set as URL
-func TestProfile_UnmarshalCBOR_URL_OK(t *testing.T) {
-	inputURL := "http://example.com"
-	profile, err := NewProfile(inputURL)
-	assert.Nil(t, err)
-
-	//    72                                   # text(18)
-	//          687474703a2f2f6578616d706c652e636f6d # "http://example.com"
-	data := []byte{
-		0x72, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65,
-		0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d,
-	}
-	expectedURL := inputURL
+	// zero length data buffer in CBOR
+	data = []byte{}
+	expectedError = `decoding of CBOR data failed: `
+	expectedError += `zero length data buffer`
 	err = profile.UnmarshalCBOR(data)
-	assert.Nil(t, err)
-	actualURL, err := profile.Get()
-	assert.Nil(t, err)
-	assert.Equal(t, expectedURL, actualURL)
+	assert.EqualError(t, err, expectedError)
 }
 
 // TestProfile_MarshalCBOR_OID_OK tests the valid CBOR marshaling of profile set as OID
