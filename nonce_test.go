@@ -4,15 +4,55 @@
 package eat
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNonce_NewNonce_ok(t *testing.T) {
+	for i := MinNonceSize; i <= MaxNonceSize; i++ {
+		tv := make([]byte, i)
+
+		nonce, err := NewNonce(tv)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, nonce)
+	}
+}
+
+func TestNonce_NewNonce_too_small(t *testing.T) {
+	tv := make([]byte, MinNonceSize-1)
+
+	nonce, err := NewNonce(tv)
+
+	expectedError := fmt.Sprintf(
+		"invalid nonce size %d, must be in range [%d, %d]",
+		len(tv), MinNonceSize, MaxNonceSize,
+	)
+
+	assert.Nil(t, nonce)
+	assert.EqualError(t, err, expectedError)
+}
+
+func TestNonce_NewNonce_too_big(t *testing.T) {
+	tv := make([]byte, MaxNonceSize+1)
+
+	nonce, err := NewNonce(tv)
+
+	expectedError := fmt.Sprintf(
+		"invalid nonce size %d, must be in range [%d, %d]",
+		len(tv), MinNonceSize, MaxNonceSize,
+	)
+
+	assert.Nil(t, nonce)
+	assert.EqualError(t, err, expectedError)
+}
+
 func TestNonce_MarshalCBOR(t *testing.T) {
 	assert := assert.New(t)
 
-	nonce := NewNonce([]byte{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef})
+	nonce, _ := NewNonce([]byte{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef})
 
 	//   48                  # bytes(8)
 	//      deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"

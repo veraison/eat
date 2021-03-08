@@ -18,6 +18,12 @@ import (
 //    )
 type Nonces []Nonce
 
+// nonce-type = bstr .size (8..64)
+const (
+	MinNonceSize = 8
+	MaxNonceSize = 64
+)
+
 // MarshalCBOR encodes Nonces as a byte string, in case there is only
 // one, or an array of byte strings if there are multiple.
 func (ns Nonces) MarshalCBOR() ([]byte, error) {
@@ -65,7 +71,7 @@ func NonceFromHex(text string) (*Nonce, error) {
 		return nil, err
 	}
 
-	return NewNonce(value), nil
+	return NewNonce(value)
 }
 
 // A Nonce is between 8 and 64 bytes
@@ -74,9 +80,20 @@ type Nonce struct {
 	value []byte
 }
 
-// NewNonce returns a Nonce initialized with the supplied byte slice
-func NewNonce(v []byte) *Nonce {
-	return &Nonce{v}
+// NewNonce returns a Nonce initialized with the supplied byte slice or an error
+// if the supplied buffer is either too big (more than 64 bytes) or too small
+// (less than 8 bytes)
+func NewNonce(v []byte) (*Nonce, error) {
+	nonceSize := len(v)
+	if nonceSize < MinNonceSize || nonceSize > MaxNonceSize {
+		return nil,
+			fmt.Errorf(
+				"invalid nonce size %d, must be in range [%d, %d]",
+				nonceSize, MinNonceSize, MaxNonceSize,
+			)
+	}
+
+	return &Nonce{v}, nil
 }
 
 // Get returns the nonce value
