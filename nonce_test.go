@@ -27,8 +27,8 @@ func TestNonce_NewNonce_too_small(t *testing.T) {
 	nonce, err := NewNonce(tv)
 
 	expectedError := fmt.Sprintf(
-		"invalid nonce size %d, must be in range [%d, %d]",
-		len(tv), MinNonceSize, MaxNonceSize,
+		"a nonce must be between %d and %d bytes long; found %d",
+		MinNonceSize, MaxNonceSize, len(tv),
 	)
 
 	assert.Nil(t, nonce)
@@ -41,8 +41,8 @@ func TestNonce_NewNonce_too_big(t *testing.T) {
 	nonce, err := NewNonce(tv)
 
 	expectedError := fmt.Sprintf(
-		"invalid nonce size %d, must be in range [%d, %d]",
-		len(tv), MinNonceSize, MaxNonceSize,
+		"a nonce must be between %d and %d bytes long; found %d",
+		MinNonceSize, MaxNonceSize, len(tv),
 	)
 
 	assert.Nil(t, nonce)
