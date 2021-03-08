@@ -12,6 +12,7 @@ const (
 	EmptyURL       = ""
 	InvalidOID     = "xxxx"
 	EmptyOID       = ""
+	NegativeOID    = "-1.2.3.-4"
 )
 
 // TestProfile_GetSet_Basic_URL_OK tests the valid setting of Profile as URL string
@@ -98,6 +99,12 @@ func TestProfile_GetSet_Basic_OID_NOK(t *testing.T) {
 	inputOID = EmptyOID
 	expectedError = `profile string must be an absolute URL or an ASN.1 OID: `
 	expectedError += `no valid OID`
+	err = profile.Set(inputOID)
+	assert.EqualError(t, err, expectedError)
+
+	inputOID = NegativeOID
+	expectedError = `profile string must be an absolute URL or an ASN.1 OID: `
+	expectedError += `invalid OID: negative subidentifier -1 not allowed`
 	err = profile.Set(inputOID)
 	assert.EqualError(t, err, expectedError)
 }

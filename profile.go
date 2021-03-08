@@ -197,6 +197,9 @@ func decodeOIDfromString(val string) (asn1.ObjectIdentifier, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract OID from string: %w", err)
 		}
+		if n < 0 {
+			return nil, fmt.Errorf("invalid OID: negative subidentifier %d not allowed", n)
+		}
 		oid = append(oid, n)
 	}
 	if len(oid) < MinNumOIDArcs {
