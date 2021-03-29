@@ -64,7 +64,7 @@ func (ns Nonces) Validate() error {
 
 // Append a nonce to a nonces' list
 func (ns *Nonces) Append(n Nonce) {
-	*ns = append([]Nonce(*ns), n)
+	*ns = append(*ns, n)
 }
 
 // Len returns the number of nonces in a list
