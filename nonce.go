@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 )
 
@@ -61,6 +60,26 @@ func (ns Nonces) Validate() error {
 	}
 
 	return nil
+}
+
+// Append a nonce to a nonces' list
+func (ns *Nonces) Append(n Nonce) {
+	*ns = append([]Nonce(*ns), n)
+}
+
+// Len returns the number of nonces in a list
+func (ns Nonces) Len() int {
+	return len(ns)
+}
+
+// GetI returns the nonce found at index (starting at 0) or nil if the index is
+// out of bounds
+func (ns Nonces) GetI(index int) []byte {
+	if index < 0 || index >= ns.Len() {
+		return nil
+	}
+
+	return ns[index].Get()
 }
 
 // NonceFromHex creates a new Nonce instance from a string containing
@@ -131,16 +150,40 @@ func (n Nonce) Validate() error {
 	return isValidNonce(n.value)
 }
 
-// MarshalJSON encodes the receiver Nonces as a JSON string
+// MarshalJSON encodes the receiver Nonces as either a JSON string (if the array
+// comprises only one element) or as an array of JSON strings.
 func (ns Nonces) MarshalJSON() ([]byte, error) {
 	if len(ns) == 1 {
-		return json.Marshal(ns[0].value)
+		return json.Marshal(ns[0])
 	}
 
-	return nil, errors.New("TODO handle array of nonces")
+	return json.Marshal([]Nonce(ns))
 }
 
+// UnmarshalJSON decodes the EAT nonce in JSON format
 func (ns *Nonces) UnmarshalJSON(data []byte) error {
+	if isJSONArray(data) {
+		return json.Unmarshal(data, (*[]Nonce)(ns))
+	}
+
+	var n Nonce
+
+	if err := json.Unmarshal(data, &n); err != nil {
+		return err
+	}
+
+	*ns = Nonces{n}
+
+	return nil
+}
+
+// MarshalJSON encodes the receiver (non-array) nonce as a JSON string
+func (n Nonce) MarshalJSON() ([]byte, error) {
+	return json.Marshal(n.value)
+}
+
+// UnmarshalJSON decodes the supplied JSON data to a (non-array) nonce
+func (n *Nonce) UnmarshalJSON(data []byte) error {
 	var v interface{}
 
 	if err := json.Unmarshal(data, &v); err != nil {
@@ -153,9 +196,9 @@ func (ns *Nonces) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return err
 		}
-		*ns = Nonces{Nonce{value}}
+		n.value = value
 		return nil
 	default:
-		return errors.New("TODO handle array of nonces")
+		return fmt.Errorf("invalid nonce input %T", t)
 	}
 }
