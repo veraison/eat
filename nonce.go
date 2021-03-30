@@ -71,8 +71,7 @@ func (ns Nonces) Validate() error {
 	return nil
 }
 
-// Add the supplied nonce value to the receiver Nonces. There can be multiple
-// nonce values carried in a single Nonces instance.
+// Add the supplied nonce value to the receiver Nonces.
 func (ns *Nonces) Add(v []byte) error {
 	n, err := newNonce(v)
 	if err != nil {
@@ -138,7 +137,7 @@ func newNonce(v []byte) (*nonce, error) {
 	return &nonce{v}, nil
 }
 
-// Get returns the nonce value
+// get returns the nonce value
 func (n nonce) get() []byte {
 	return n.value
 }
