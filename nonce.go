@@ -160,8 +160,8 @@ func (n *nonce) UnmarshalCBOR(data []byte) error {
 	return nil
 }
 
-// validate checks that the underlying value of the Nonce is between 8 and 64
-// bytes, as is required by the EAT spec
+// validate checks that the nonce is between 8 and 64 bytes, as is required by
+// the EAT spec
 func (n nonce) validate() error {
 	return isValidNonce(n.value)
 }
