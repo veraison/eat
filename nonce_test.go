@@ -115,6 +115,17 @@ func TestNonces_MarshalCBOR_multiple_ok(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestNonces_MarshalCBOR_empty(t *testing.T) {
+	nonces := Nonces{}
+
+	_, err := nonces.MarshalCBOR()
+
+	expected := "CBOR encoding failed: "
+	expected += "empty nonce"
+
+	assert.EqualError(t, err, expected)
+}
+
 func TestNonces_UnmarshalCBOR_single_ok(t *testing.T) {
 	expected := []byte{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe}
 
@@ -289,6 +300,17 @@ func TestNonces_UnmarshalJSON_single_ok(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, actual.Len())
 	assert.Equal(t, expected, actual.GetI(0))
+}
+
+func TestNonces_MarshalJSON_empty(t *testing.T) {
+	nonces := Nonces{}
+
+	_, err := nonces.MarshalJSON()
+
+	expected := "JSON encoding failed: "
+	expected += "empty nonce"
+
+	assert.EqualError(t, err, expected)
 }
 
 func TestNonces_UnmarshalJSON_invalid_json(t *testing.T) {

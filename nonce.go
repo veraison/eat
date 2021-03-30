@@ -27,6 +27,10 @@ const (
 // In case there is only one nonce, it is encoded as a bstr. If there are
 // multiple, it is encoded as an array of bstr.
 func (ns Nonces) MarshalCBOR() ([]byte, error) {
+	if err := ns.Validate(); err != nil {
+		return nil, fmt.Errorf("CBOR encoding failed: %w", err)
+	}
+
 	if len(ns) == 1 {
 		return em.Marshal(ns[0])
 	}
@@ -163,9 +167,14 @@ func (n nonce) validate() error {
 	return isValidNonce(n.value)
 }
 
-// MarshalJSON encodes the receiver Nonces as either a JSON string (if the array
+// MarshalJSON encodes the receiver Nonces as either a JSON string containing
+// the base64 encoding of the binary nonce (if the array
 // comprises only one element) or as an array of JSON strings.
 func (ns Nonces) MarshalJSON() ([]byte, error) {
+	if err := ns.Validate(); err != nil {
+		return nil, fmt.Errorf("JSON encoding failed: %w", err)
+	}
+
 	if len(ns) == 1 {
 		return json.Marshal(ns[0])
 	}
