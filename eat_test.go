@@ -16,7 +16,7 @@ var (
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 	}
 	oemID       = []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-	nonce       = Nonce{[]byte{0xde, 0xad, 0xbe, 0xef}}
+	nonceBytes  = []byte{0xde, 0xad, 0xbe, 0xef}
 	AcmeInc     = "Acme Inc."
 	origination = StringOrURI{text: &AcmeInc}
 	secLevel    = SecurityLevel(SecLevelHardware)
@@ -35,7 +35,7 @@ var (
 	epoch    = NumericDate(time.Unix(0, 0))
 
 	fatEat = Eat{
-		Nonce:         &Nonces{nonce},
+		Nonce:         &Nonces{nonce{nonceBytes}},
 		UEID:          &ueID,
 		Origination:   &origination,
 		OemID:         &oemID,

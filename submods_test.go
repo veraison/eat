@@ -48,7 +48,7 @@ func TestSubmods_Add_FAIL(t *testing.T) {
 func TestSubmods_JSONMarshal_Simple(t *testing.T) {
 	var s Submods
 
-	require.Nil(t, s.Add("0", Eat{Nonce: &Nonces{nonce}}))
+	require.Nil(t, s.Add("0", Eat{Nonce: &Nonces{nonce{nonceBytes}}}))
 	require.Nil(t, s.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
 
 	expected := `{
@@ -98,7 +98,7 @@ func TestSubmods_JSONUnmarshal_Simple(t *testing.T) {
 	err := json.Unmarshal(tv, &s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get("0"))
+	assert.Equal(t, Eat{Nonce: &Nonces{nonce{nonceBytes}}}, s.Get("0"))
 	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
 }
 
@@ -125,7 +125,7 @@ func TestSubmods_JSONUnmarshal_Nested(t *testing.T) {
 func TestSubmods_CBORMarshal_Simple(t *testing.T) {
 	var s Submods
 
-	require.Nil(t, s.Add("0", Eat{Nonce: &Nonces{nonce}}))
+	require.Nil(t, s.Add("0", Eat{Nonce: &Nonces{nonce{nonceBytes}}}))
 	require.Nil(t, s.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
 
 	// echo "{\"0\": {10: h'deadbeef'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
@@ -171,7 +171,7 @@ func TestSubmods_CBORUnmarshal_Simple(t *testing.T) {
 	err := dm.Unmarshal(tv, &s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get("0"))
+	assert.Equal(t, Eat{Nonce: &Nonces{nonce{nonceBytes}}}, s.Get("0"))
 	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
 }
 
@@ -187,7 +187,7 @@ func TestSubmods_CBORUnmarshal_SimpleWithNegativeKey(t *testing.T) {
 	err := dm.Unmarshal(tv, &s)
 	assert.Nil(t, err)
 
-	assert.Equal(t, Eat{Nonce: &Nonces{nonce}}, s.Get("-1"))
+	assert.Equal(t, Eat{Nonce: &Nonces{nonce{nonceBytes}}}, s.Get("-1"))
 	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
 }
 
