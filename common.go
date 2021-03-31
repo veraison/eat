@@ -22,3 +22,11 @@ func isCBORArray(data []byte) bool {
 
 	return (data[0] & 0xe0) == 0x80
 }
+
+func isJSONArray(data []byte) bool {
+	if len(data) == 0 {
+		return false
+	}
+
+	return data[0] == '['
+}
