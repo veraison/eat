@@ -37,7 +37,7 @@ var (
 	epoch    = NumericDate(time.Unix(0, 0))
 
 	fatEat = Eat{
-		Nonce:         &Nonces{nonce{nonceBytes}},
+		Nonce:         &Nonce{nonce{nonceBytes}},
 		UEID:          &ueID,
 		Origination:   &origination,
 		OemID:         &oemID,

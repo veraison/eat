@@ -102,11 +102,11 @@ func (n *nonce) UnmarshalJSON(data []byte) error {
 //    nonce-claim = (
 //        nonce => nonce-type / [ 2* nonce-type ]
 //    )
-type Nonces []nonce
+type Nonce []nonce
 
 // Validate checks that all nonce values (of which there must be at least one)
-// stored in the Nonces receiver are valid according to the EAT syntax.
-func (ns Nonces) Validate() error {
+// stored in the Nonce receiver are valid according to the EAT syntax.
+func (ns Nonce) Validate() error {
 	if len(ns) == 0 {
 		return fmt.Errorf("empty nonce")
 	}
@@ -120,8 +120,8 @@ func (ns Nonces) Validate() error {
 	return nil
 }
 
-// Add the supplied nonce, provided as a byte array, to the Nonces receiver.
-func (ns *Nonces) Add(v []byte) error {
+// Add the supplied nonce, provided as a byte array, to the Nonce receiver.
+func (ns *Nonce) Add(v []byte) error {
 	n, err := newNonce(v)
 	if err != nil {
 		return err
@@ -132,14 +132,14 @@ func (ns *Nonces) Add(v []byte) error {
 	return nil
 }
 
-// Len returns the number of nonce values carried in the Nonces receiver.
-func (ns Nonces) Len() int {
+// Len returns the number of nonce values carried in the Nonce receiver.
+func (ns Nonce) Len() int {
 	return len(ns)
 }
 
 // GetI returns the nonce found at the supplied index (counting from 0) or nil
 // if the index is out of bounds.
-func (ns Nonces) GetI(index int) []byte {
+func (ns Nonce) GetI(index int) []byte {
 	if index < 0 || index >= ns.Len() {
 		return nil
 	}
@@ -149,7 +149,7 @@ func (ns Nonces) GetI(index int) []byte {
 
 // AddHex provides the same functionality as Add except it takes the nonce value
 // as a hex-encoded string.
-func (ns *Nonces) AddHex(text string) error {
+func (ns *Nonce) AddHex(text string) error {
 	value, err := hex.DecodeString(text)
 	if err != nil {
 		return fmt.Errorf("decoding nonce failed: %w", err)
@@ -158,10 +158,10 @@ func (ns *Nonces) AddHex(text string) error {
 	return ns.Add(value)
 }
 
-// MarshalCBOR provides a suitable CBOR encoding for the receiver Nonces. In
+// MarshalCBOR provides a suitable CBOR encoding for the receiver Nonce. In
 // case there is only one nonce, the encoded produces a single bstr. If there
 // are multiple, the encoder produces an array of bstr, one for each nonce.
-func (ns Nonces) MarshalCBOR() ([]byte, error) {
+func (ns Nonce) MarshalCBOR() ([]byte, error) {
 	if err := ns.Validate(); err != nil {
 		return nil, fmt.Errorf("CBOR encoding failed: %w", err)
 	}
@@ -175,7 +175,7 @@ func (ns Nonces) MarshalCBOR() ([]byte, error) {
 
 // UnmarshalCBOR decodes a EAT nonce. This may be a single byte string
 // between 8 and 64 bytes long, or an array of two or more such strings.
-func (ns *Nonces) UnmarshalCBOR(data []byte) error {
+func (ns *Nonce) UnmarshalCBOR(data []byte) error {
 	if isCBORArray(data) {
 		return dm.Unmarshal(data, (*[]nonce)(ns))
 	}
@@ -186,15 +186,15 @@ func (ns *Nonces) UnmarshalCBOR(data []byte) error {
 		return fmt.Errorf("CBOR decoding failed for nonce: %w", err)
 	}
 
-	*ns = Nonces{n}
+	*ns = Nonce{n}
 
 	return nil
 }
 
-// MarshalJSON encodes the receiver Nonces as either a JSON string containing
+// MarshalJSON encodes the receiver Nonce as either a JSON string containing
 // the base64 encoding of the binary nonce (if the array comprises only one
 // element) or as an array of base64-encoded JSON strings.
-func (ns Nonces) MarshalJSON() ([]byte, error) {
+func (ns Nonce) MarshalJSON() ([]byte, error) {
 	if err := ns.Validate(); err != nil {
 		return nil, fmt.Errorf("JSON encoding failed: %w", err)
 	}
@@ -207,7 +207,7 @@ func (ns Nonces) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON decodes a EAT nonce in JSON format.
-func (ns *Nonces) UnmarshalJSON(data []byte) error {
+func (ns *Nonce) UnmarshalJSON(data []byte) error {
 	if isJSONArray(data) {
 		return json.Unmarshal(data, (*[]nonce)(ns))
 	}
@@ -218,7 +218,7 @@ func (ns *Nonces) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("JSON decoding failed for nonce: %w", err)
 	}
 
-	*ns = Nonces{n}
+	*ns = Nonce{n}
 
 	return nil
 }

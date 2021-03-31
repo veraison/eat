@@ -6,7 +6,7 @@ package eat
 import "fmt"
 
 func ExampleEat_ToJSON() {
-	nonce := Nonces{}
+	nonce := Nonce{}
 
 	if err := nonce.AddHex("0000000000000000"); err != nil {
 		panic(err)

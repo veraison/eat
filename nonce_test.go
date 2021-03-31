@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNonces_Add_ok(t *testing.T) {
-	nonces := Nonces{}
+func TestNonce_Add_ok(t *testing.T) {
+	nonces := Nonce{}
 
 	for i := MinNonceSize; i <= MaxNonceSize; i++ {
 		tv := make([]byte, i)
@@ -23,8 +23,8 @@ func TestNonces_Add_ok(t *testing.T) {
 	}
 }
 
-func TestNonces_Add_too_small(t *testing.T) {
-	nonces := Nonces{}
+func TestNonce_Add_too_small(t *testing.T) {
+	nonces := Nonce{}
 
 	tv := make([]byte, MinNonceSize-1)
 
@@ -38,8 +38,8 @@ func TestNonces_Add_too_small(t *testing.T) {
 	assert.EqualError(t, err, expectedError)
 }
 
-func TestNonces_Add_too_big(t *testing.T) {
-	nonces := Nonces{}
+func TestNonce_Add_too_big(t *testing.T) {
+	nonces := Nonce{}
 
 	tv := make([]byte, MaxNonceSize+1)
 
@@ -53,16 +53,16 @@ func TestNonces_Add_too_big(t *testing.T) {
 	assert.EqualError(t, err, expectedError)
 }
 
-func TestNonces_AddHex_ok(t *testing.T) {
-	nonces := Nonces{}
+func TestNonce_AddHex_ok(t *testing.T) {
+	nonces := Nonce{}
 
 	err := nonces.AddHex("deadbeefbeefdead")
 
 	assert.Nil(t, err)
 }
 
-func TestNonces_AddHex_bad_hex(t *testing.T) {
-	nonces := Nonces{}
+func TestNonce_AddHex_bad_hex(t *testing.T) {
+	nonces := Nonce{}
 
 	err := nonces.AddHex("dea")
 
@@ -71,12 +71,12 @@ func TestNonces_AddHex_bad_hex(t *testing.T) {
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_MarshalCBOR_single_ok(t *testing.T) {
+func TestNonce_MarshalCBOR_single_ok(t *testing.T) {
 	tv := []byte{
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 	}
 
-	nonces := Nonces{}
+	nonces := Nonce{}
 	require.Nil(t, nonces.Add(tv))
 
 	expected := []byte{
@@ -88,13 +88,13 @@ func TestNonces_MarshalCBOR_single_ok(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestNonces_MarshalCBOR_multiple_ok(t *testing.T) {
+func TestNonce_MarshalCBOR_multiple_ok(t *testing.T) {
 	tv := [][]byte{
 		{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef},
 		{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe},
 	}
 
-	nonces := Nonces{}
+	nonces := Nonce{}
 	for i := range tv {
 		require.Nil(t, nonces.Add(tv[i]))
 	}
@@ -115,8 +115,8 @@ func TestNonces_MarshalCBOR_multiple_ok(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestNonces_MarshalCBOR_empty(t *testing.T) {
-	nonces := Nonces{}
+func TestNonce_MarshalCBOR_empty(t *testing.T) {
+	nonces := Nonce{}
 
 	_, err := nonces.MarshalCBOR()
 
@@ -126,14 +126,14 @@ func TestNonces_MarshalCBOR_empty(t *testing.T) {
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_UnmarshalCBOR_single_ok(t *testing.T) {
+func TestNonce_UnmarshalCBOR_single_ok(t *testing.T) {
 	expected := []byte{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe}
 
 	//   48                  # bytes(8)
 	//      abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
 	data := append([]byte{0x48}, expected...)
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalCBOR(data)
 
 	assert.Nil(t, err)
@@ -141,7 +141,7 @@ func TestNonces_UnmarshalCBOR_single_ok(t *testing.T) {
 	assert.Equal(t, expected, actual.GetI(0))
 }
 
-func TestNonces_UnmarshalCBOR_multiple_ok(t *testing.T) {
+func TestNonce_UnmarshalCBOR_multiple_ok(t *testing.T) {
 	expected := [][]byte{
 		{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef},
 		{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe},
@@ -158,7 +158,7 @@ func TestNonces_UnmarshalCBOR_multiple_ok(t *testing.T) {
 	data = append(data, byte(0x48))
 	data = append(data, expected[1]...)
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalCBOR(data)
 
 	assert.Nil(t, err)
@@ -171,7 +171,7 @@ func TestNonce_UnmarshalCBOR_bad_cbor(t *testing.T) {
 	// length (8) doesn't match the number of bytes (7)
 	data := []byte{0x48, 0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca}
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalCBOR(data)
 
 	expected := "CBOR decoding failed for nonce: unexpected EOF"
@@ -179,28 +179,28 @@ func TestNonce_UnmarshalCBOR_bad_cbor(t *testing.T) {
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_Validate_ok(t *testing.T) {
+func TestNonce_Validate_ok(t *testing.T) {
 	data := []byte{0x48, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}
 
-	actual := Nonces{}
+	actual := Nonce{}
 	require.Nil(t, actual.UnmarshalCBOR(data))
 
 	err := actual.Validate()
 	assert.Nil(t, err)
 }
 
-func TestNonces_Validate_empty(t *testing.T) {
-	empty := Nonces{}
+func TestNonce_Validate_empty(t *testing.T) {
+	empty := Nonce{}
 
 	err := empty.Validate()
 	assert.EqualError(t, err, "empty nonce")
 }
 
-func TestNonces_Validate_too_short(t *testing.T) {
+func TestNonce_Validate_too_short(t *testing.T) {
 	// 7 bytes
 	data := []byte{0x47, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe}
 
-	actual := Nonces{}
+	actual := Nonce{}
 	require.Nil(t, actual.UnmarshalCBOR(data))
 
 	expected := "found invalid nonce at index 0: "
@@ -210,7 +210,7 @@ func TestNonces_Validate_too_short(t *testing.T) {
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_Validate_too_long(t *testing.T) {
+func TestNonce_Validate_too_long(t *testing.T) {
 	// 65 bytes
 	data := []byte{
 		0x58, 0x41, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde,
@@ -222,7 +222,7 @@ func TestNonces_Validate_too_long(t *testing.T) {
 		0xde,
 	}
 
-	actual := Nonces{}
+	actual := Nonce{}
 	require.Nil(t, actual.UnmarshalCBOR(data))
 
 	expected := "found invalid nonce at index 0: "
@@ -232,18 +232,18 @@ func TestNonces_Validate_too_long(t *testing.T) {
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_UnmarshalCBOR_repeatedly(t *testing.T) {
+func TestNonce_UnmarshalCBOR_repeatedly(t *testing.T) {
 	data1 := []byte{0x48, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}
 	data2 := []byte{0x48, 0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe}
 
 	expected := []byte{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe}
 
-	actual := Nonces{}
+	actual := Nonce{}
 
 	err := actual.UnmarshalCBOR(data1)
 	assert.Nil(t, err)
 
-	// the second decode on the same Nonces clobbers the first
+	// the second decode on the same Nonce clobbers the first
 	err = actual.UnmarshalCBOR(data2)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, actual.Len())
@@ -251,7 +251,7 @@ func TestNonces_UnmarshalCBOR_repeatedly(t *testing.T) {
 }
 
 func TestNonce_MarshalJSON_single_ok(t *testing.T) {
-	nonces := Nonces{}
+	nonces := Nonce{}
 
 	err := nonces.Add([]byte{
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
@@ -266,13 +266,13 @@ func TestNonce_MarshalJSON_single_ok(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestNonces_MarshalJSON_multiple_ok(t *testing.T) {
+func TestNonce_MarshalJSON_multiple_ok(t *testing.T) {
 	tv := [][]byte{
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		{0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01},
 	}
 
-	nonces := Nonces{}
+	nonces := Nonce{}
 	for i := range tv {
 		require.Nil(t, nonces.Add(tv[i]))
 	}
@@ -287,14 +287,14 @@ func TestNonces_MarshalJSON_multiple_ok(t *testing.T) {
 	assert.JSONEq(t, expected, string(actual))
 }
 
-func TestNonces_UnmarshalJSON_single_ok(t *testing.T) {
+func TestNonce_UnmarshalJSON_single_ok(t *testing.T) {
 	tv := []byte(`"3q2+796tvu8="`)
 
 	expected := []byte{
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 	}
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalJSON(tv)
 
 	assert.Nil(t, err)
@@ -302,8 +302,8 @@ func TestNonces_UnmarshalJSON_single_ok(t *testing.T) {
 	assert.Equal(t, expected, actual.GetI(0))
 }
 
-func TestNonces_MarshalJSON_empty(t *testing.T) {
-	nonces := Nonces{}
+func TestNonce_MarshalJSON_empty(t *testing.T) {
+	nonces := Nonce{}
 
 	_, err := nonces.MarshalJSON()
 
@@ -313,49 +313,49 @@ func TestNonces_MarshalJSON_empty(t *testing.T) {
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_UnmarshalJSON_invalid_json(t *testing.T) {
+func TestNonce_UnmarshalJSON_invalid_json(t *testing.T) {
 	tv := []byte(`"unterminated string`)
 
 	expected := "JSON decoding failed for nonce: "
 	expected += "unexpected end of JSON input"
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalJSON(tv)
 
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_UnmarshalJSON_invalid_base64(t *testing.T) {
+func TestNonce_UnmarshalJSON_invalid_base64(t *testing.T) {
 	tv := []byte(`"0"`)
 
 	expected := "JSON decoding failed for nonce: "
 	expected += "illegal base64 data at input byte 0"
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalJSON(tv)
 
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_UnmarshalJSON_not_a_string(t *testing.T) {
+func TestNonce_UnmarshalJSON_not_a_string(t *testing.T) {
 	tv := []byte(`{ "a": 1 }`)
 
 	expected := "JSON decoding failed for nonce: "
 	expected += "invalid nonce input map[string]interface {}"
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalJSON(tv)
 
 	assert.EqualError(t, err, expected)
 }
 
-func TestNonces_GetI_ok(t *testing.T) {
+func TestNonce_GetI_ok(t *testing.T) {
 	tv := [][]byte{
 		{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef},
 		{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe},
 	}
 
-	nonces := Nonces{}
+	nonces := Nonce{}
 	for i := range tv {
 		require.Nil(t, nonces.Add(tv[i]))
 	}
@@ -365,8 +365,8 @@ func TestNonces_GetI_ok(t *testing.T) {
 	}
 }
 
-func TestNonces_GetI_out_of_bounds(t *testing.T) {
-	tv := Nonces{}
+func TestNonce_GetI_out_of_bounds(t *testing.T) {
+	tv := Nonce{}
 
 	for i := -10; i < 10; i++ {
 		actual := tv.GetI(i)
@@ -374,13 +374,13 @@ func TestNonces_GetI_out_of_bounds(t *testing.T) {
 	}
 }
 
-func TestNonces_UnmarshalJSON_two_entries_ok(t *testing.T) {
+func TestNonce_UnmarshalJSON_two_entries_ok(t *testing.T) {
 	tv := []byte(`[
 		"AAAAAAAAAAA=",
 		"AQEBAQEBAQE="
 	]`)
 
-	actual := Nonces{}
+	actual := Nonce{}
 	err := actual.UnmarshalJSON(tv)
 
 	expected := [][]byte{
