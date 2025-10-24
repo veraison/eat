@@ -25,13 +25,13 @@ func ExampleEat_ToJSON() {
 
 	fmt.Println(string(j))
 
-	// Output: {"nonce":"AAAAAAAAAAA="}
+	// Output: {"eat_nonce":"AAAAAAAAAAA="}
 }
 
 func ExampleEat_FromJSON() {
 	t := Eat{}
 
-	data := []byte(`{"nonce":"AAAAAAAAAAA="}`)
+	data := []byte(`{"eat_nonce":"AAAAAAAAAAA="}`)
 
 	if err := t.FromJSON(data); err != nil {
 		panic(err)

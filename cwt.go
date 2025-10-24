@@ -12,4 +12,5 @@ type CWTClaims struct {
 	NotBefore  *NumericDate `cbor:"5,keyasint,omitempty" json:"nbf,omitempty"`
 	IssuedAt   *NumericDate `cbor:"6,keyasint,omitempty" json:"iat,omitempty"`
 	CwtID      *[]byte      `cbor:"7,keyasint,omitempty" json:"cti,omitempty"`
+	//Cnf        *KeyConfirmation `cbor:"8,keyasint,omitempty" json:"cnf,omitempty"`
 }
