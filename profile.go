@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	cbor "github.com/fxamacker/cbor/v2"
 )
 
 const (
@@ -100,6 +102,23 @@ func constructASN1fromVal(val []byte) ([]byte, error) {
 // as either a URL or a Object Identifier
 func (s *Profile) decodeProfile(val interface{}) error {
 	switch t := val.(type) {
+	case cbor.Tag:
+		// uri = #6.32(tstr) in RFC 8610
+		if t.Number != 32 {
+			return fmt.Errorf("profile tag differ: 32 vs %d", t.Number)
+		}
+		uri, ok := t.Content.(string)
+		if !ok {
+			return fmt.Errorf("tagged profile content type differ: %v", t.Content)
+		}
+		u, err := url.Parse(uri)
+		if err != nil {
+			return fmt.Errorf("profile URL parsing failed: %w", err)
+		}
+		if !u.IsAbs() {
+			return fmt.Errorf("profile URL not in absolute form")
+		}
+		s.val = u
 	case string:
 		u, err := url.Parse(t)
 		if err != nil {
