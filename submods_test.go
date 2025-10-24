@@ -53,7 +53,7 @@ func TestSubmods_JSONMarshal_Simple(t *testing.T) {
 
 	expected := `{
 		"0": {
-			"nonce": "AAAAAAAAAAA="
+			"eat_nonce": "AAAAAAAAAAA="
 		},
 		"xyz": "2D3SQaA="
 	}`
@@ -88,7 +88,7 @@ func TestSubmods_JSONMarshal_Nested(t *testing.T) {
 func TestSubmods_JSONUnmarshal_Simple(t *testing.T) {
 	tv := []byte(`{
 		"0": {
-			"nonce": "AAAAAAAAAAA="
+			"eat_nonce": "AAAAAAAAAAA="
 		},
 		"xyz": "2D3SQaA="
 	}`)
@@ -149,10 +149,10 @@ func TestSubmods_CBORMarshal_Nested(t *testing.T) {
 	var outer Submods
 	require.Nil(t, outer.Add("0", eat))
 
-	// echo "{\"0\": {20: {\"xyz\": h'd83dd241a0'}}}" | diag2cbor.rb | xxd -i
+	// echo "{\"0\": {266: {\"xyz\": h'd83dd241a0'}}}" | diag2cbor.rb | xxd -i
 	expected := []byte{
-		0xa1, 0x61, 0x30, 0xa1, 0x14, 0xa1, 0x63, 0x78, 0x79, 0x7a, 0x45,
-		0xd8, 0x3d, 0xd2, 0x41, 0xa0,
+		0xa1, 0x61, 0x30, 0xa1, 0x19, 0x01, 0x0a, 0xa1, 0x63, 0x78, 0x79, 0x7a,
+		0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
 	}
 
 	actual, err := em.Marshal(outer)
@@ -195,10 +195,10 @@ func TestSubmods_CBORUnmarshal_SimpleWithNegativeKey(t *testing.T) {
 }
 
 func TestSubmods_CBORUnmarshal_Nested(t *testing.T) {
-	// echo "{ \"0\": { 20: { \"xyz\": h'd83dd241a0' } } }" | diag2cbor.rb | xxd -i
+	// echo "{ \"0\": { 266: { \"xyz\": h'd83dd241a0' } } }" | diag2cbor.rb | xxd -i
 	tv := []byte{
-		0xa1, 0x61, 0x30, 0xa1, 0x14, 0xa1, 0x63, 0x78, 0x79, 0x7a, 0x45,
-		0xd8, 0x3d, 0xd2, 0x41, 0xa0,
+		0xa1, 0x61, 0x30, 0xa1, 0x19, 0x01, 0x0a, 0xa1, 0x63, 0x78, 0x79, 0x7a,
+		0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
 	}
 
 	var outer Submods

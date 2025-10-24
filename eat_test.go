@@ -21,8 +21,7 @@ var (
 	}
 	AcmeInc     = "Acme Inc."
 	origination = StringOrURI{text: &AcmeInc}
-	secLevel    = SecurityLevel(SecLevelHardware)
-	secBoot     = true
+	oemBoot     = true
 	debug       = Debug(DebugDisabled)
 	location    = Location{Latitude: 12.34, Longitude: 56.78}
 	uptime      = uint(60)
@@ -37,15 +36,13 @@ var (
 	epoch    = NumericDate(time.Unix(0, 0))
 
 	fatEat = Eat{
-		Nonce:         &Nonce{nonce{nonceBytes}},
-		UEID:          &ueID,
-		Origination:   &origination,
-		OemID:         &oemID,
-		SecurityLevel: &secLevel,
-		SecureBoot:    &secBoot,
-		Debug:         &debug,
-		Location:      &location,
-		Uptime:        &uptime,
+		Nonce:       &Nonce{nonce{nonceBytes}},
+		UEID:        &ueID,
+		OemID:       &oemID,
+		OemBoot:     &oemBoot,
+		DebugStatus: &debug,
+		Location:    &location,
+		Uptime:      &uptime,
 
 		CWTClaims: CWTClaims{
 			Issuer:     &issuer,
@@ -96,68 +93,63 @@ func jsonRoundTripper(t *testing.T, tv Eat, expected string) {
 func TestEat_Full_RoundtripCBOR(t *testing.T) {
 	tv := fatEat
 	/*
-	   b0                                      # map(16)
-	      01                                   # unsigned(1)
-	      69                                   # text(9)
-	         41636d6520496e632e                # "Acme Inc."
-	      02                                   # unsigned(2)
-	      67                                   # text(7)
-	         72722d74726170                    # "rr-trap"
-	      03                                   # unsigned(3)
-	      69                                   # text(9)
-	         41636d6520496e632e                # "Acme Inc."
-	      04                                   # unsigned(4)
-	      c1                                   # tag(1)
-	         00                                # unsigned(0)
-	      05                                   # unsigned(5)
-	      c1                                   # tag(1)
-	         00                                # unsigned(0)
-	      06                                   # unsigned(6)
-	      c1                                   # tag(1)
-	         00                                # unsigned(0)
-	      07                                   # unsigned(7)
-	      46                                   # bytes(6)
-	         ffffffffffff                      # "\xFF\xFF\xFF\xFF\xFF\xFF"
-	      0a                                   # unsigned(10)
-	      48                                   # bytes(8)
-	         0000000000000000                  # "\x00\x00\x00\x00\x00\x00\x00\x00"
-	      0b                                   # unsigned(11)
-	      51                                   # bytes(17)
-	         01deadbeefdeadbeefdeadbeefdeadbeef # "\x01\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
-	      0c                                   # unsigned(12)
-	      69                                   # text(9)
-	         41636d6520496e632e                # "Acme Inc."
-	      0d                                   # unsigned(13)
-	      46                                   # bytes(6)
-	         ffffffffffff                      # "\xFF\xFF\xFF\xFF\xFF\xFF"
-	      0e                                   # unsigned(14)
-	      03                                   # unsigned(3)
-	      0f                                   # unsigned(15)
-	      f5                                   # primitive(21)
-	      10                                   # unsigned(16)
-	      01                                   # unsigned(1)
-	      11                                   # unsigned(17)
-	      a2                                   # map(2)
-	         01                                # unsigned(1)
-	         fb 4028ae147ae147ae               # primitive(4623136420479977390)
-	         02                                # unsigned(2)
-	         fb 404c63d70a3d70a4               # primitive(4633187891898314916)
-	      13                                   # unsigned(19)
-	      18 3c                                # unsigned(60)
+		ae                                      # map(14)
+		   01                                   # unsigned(1)
+		   69                                   # text(9)
+		      41636d6520496e632e                # "Acme Inc."
+		   02                                   # unsigned(2)
+		   67                                   # text(7)
+		      72722d74726170                    # "rr-trap"
+		   03                                   # unsigned(3)
+		   69                                   # text(9)
+		      41636d6520496e632e                # "Acme Inc."
+		   04                                   # unsigned(4)
+		   c1                                   # tag(1)
+		      00                                # unsigned(0)
+		   05                                   # unsigned(5)
+		   c1                                   # tag(1)
+		      00                                # unsigned(0)
+		   06                                   # unsigned(6)
+		   c1                                   # tag(1)
+		      00                                # unsigned(0)
+		   07                                   # unsigned(7)
+		   46                                   # bytes(6)
+		      ffffffffffff                      # "\xFF\xFF\xFF\xFF\xFF\xFF"
+		   0a                                   # unsigned(10)
+		   48                                   # bytes(8)
+		      0000000000000000                  # "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+		   19 0100                              # unsigned(256)
+		   51                                   # bytes(17)
+		      01deadbeefdeadbeefdeadbeefdeadbeef # "\u0001ޭ\xBE\xEFޭ\xBE\xEFޭ\xBE\xEFޭ\xBE\xEF"
+		   19 0102                              # unsigned(258)
+		   46                                   # bytes(6)
+		      ffffffffffff                      # "\xFF\xFF\xFF\xFF\xFF\xFF"
+		   19 0105                              # unsigned(261)
+		   18 3c                                # unsigned(60)
+		   19 0106                              # unsigned(262)
+		   f5                                   # primitive(21)
+		   19 0107                              # unsigned(263)
+		   01                                   # unsigned(1)
+		   19 0108                              # unsigned(264)
+		   a2                                   # map(2)
+		      01                                # unsigned(1)
+		      fb 4028ae147ae147ae               # primitive(4623136420479977390)
+		      02                                # unsigned(2)
+		      fb 404c63d70a3d70a4               # primitive(4633187891898314916)
 	*/
 	expected := []byte{
-		0xb0, 0x01, 0x69, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63,
+		0xae, 0x01, 0x69, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63,
 		0x2e, 0x02, 0x67, 0x72, 0x72, 0x2d, 0x74, 0x72, 0x61, 0x70, 0x03,
 		0x69, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63, 0x2e, 0x04,
 		0xc1, 0x00, 0x05, 0xc1, 0x00, 0x06, 0xc1, 0x00, 0x07, 0x46, 0xff,
 		0xff, 0xff, 0xff, 0xff, 0xff, 0x0a, 0x48, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x0b, 0x51, 0x01, 0xde, 0xad, 0xbe, 0xef,
-		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe,
-		0xef, 0x0c, 0x69, 0x41, 0x63, 0x6d, 0x65, 0x20, 0x49, 0x6e, 0x63,
-		0x2e, 0x0d, 0x46, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0e, 0x03,
-		0x0f, 0xf5, 0x10, 0x01, 0x11, 0xa2, 0x01, 0xfb, 0x40, 0x28, 0xae,
-		0x14, 0x7a, 0xe1, 0x47, 0xae, 0x02, 0xfb, 0x40, 0x4c, 0x63, 0xd7,
-		0x0a, 0x3d, 0x70, 0xa4, 0x13, 0x18, 0x3c,
+		0x00, 0x00, 0x00, 0x00, 0x19, 0x01, 0x00, 0x51, 0x01, 0xde, 0xad,
+		0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde,
+		0xad, 0xbe, 0xef, 0x19, 0x01, 0x02, 0x46, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0x19, 0x01, 0x05, 0x18, 0x3c, 0x19, 0x01, 0x06, 0xf5,
+		0x19, 0x01, 0x07, 0x01, 0x19, 0x01, 0x08, 0xa2, 0x01, 0xfb, 0x40,
+		0x28, 0xae, 0x14, 0x7a, 0xe1, 0x47, 0xae, 0x02, 0xfb, 0x40, 0x4c,
+		0x63, 0xd7, 0x0a, 0x3d, 0x70, 0xa4,
 	}
 
 	cborRoundTripper(t, tv, expected)
@@ -167,12 +159,10 @@ func TestEat_Full_RoundtripJSON(t *testing.T) {
 	tv := fatEat
 	expected := `
 {
-	"nonce": "AAAAAAAAAAA=",
-	"origination": "Acme Inc.",
+	"eat_nonce": "AAAAAAAAAAA=",
 	"oemid": "////////",
-	"security-level": 3,
-	"secure-boot": true,
-	"debug-disable": 1,
+	"oemboot": true,
+	"dbgstat": 1,
 	"location": {
 		"lat": 12.34,
 		"long": 56.78
@@ -187,6 +177,7 @@ func TestEat_Full_RoundtripJSON(t *testing.T) {
 	"iat": 0,
 	"cti": "////////"
 }`
+	// NOTE: cti is not in JSON EAT though
 	jsonRoundTripper(t, tv, expected)
 }
 
