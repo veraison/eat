@@ -11,9 +11,45 @@ import (
 )
 
 type Version struct {
-	_       struct{} `cbor:",toarray"` // TODO: implement UnmarshalJSON
+	_       struct{} `cbor:",toarray"`
 	Version string
 	Scheme  *VersionScheme
+}
+
+func (v Version) MarshalCBOR() ([]byte, error) {
+	r := []interface{}{v.Version}
+	if v.Scheme != nil {
+		r = append(r, *v.Scheme)
+	}
+	return cbor.Marshal(r)
+}
+
+func (v *Version) UnmarshalCBOR(data []byte) error {
+	var raw []interface{}
+	if err := cbor.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	if len(raw) < 1 || len(raw) > 2 {
+		return fmt.Errorf("invalid Version CBOR array length: %d", len(raw))
+	}
+
+	version, ok := raw[0].(string)
+	if !ok {
+		return fmt.Errorf("invalid Version type: expected string")
+	}
+	v.Version = version
+	if len(raw) == 2 {
+		var s uint64
+		s, ok := raw[1].(uint64)
+		if !ok {
+			return fmt.Errorf("invalid Version Scheme type: expected int %T", raw[1])
+		}
+		scheme := VersionScheme(s)
+		v.Scheme = &scheme
+	}
+
+	return nil
 }
 
 type VersionScheme int
