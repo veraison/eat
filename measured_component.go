@@ -4,8 +4,6 @@
 package eat
 
 import (
-	"encoding/json"
-
 	"github.com/veraison/swid"
 )
 
@@ -21,24 +19,4 @@ type ComponentID struct {
 	_       struct{} `cbor:",toarray"`
 	Name    string   `cbor:"0,keyasint"`
 	Version *Version `cbor:"1,keyasint,omitempty"`
-}
-
-// FromCBOR deserializes the supplied CBOR encoded MeasuredComponent into the receiver MeasuredComponent
-func (mc *MeasuredComponent) FromCBOR(data []byte) error {
-	return dm.Unmarshal(data, mc)
-}
-
-// ToCBOR serializes the receiver MeasuredComponent into CBOR encoded MeasuredComponent
-func (mc MeasuredComponent) ToCBOR() ([]byte, error) {
-	return em.Marshal(mc)
-}
-
-// FromJSON deserializes the supplied JSON encoded MeasuredComponent into the receiver MeasuredComponent
-func (mc *MeasuredComponent) FromJSON(data []byte) error {
-	return json.Unmarshal(data, mc)
-}
-
-// ToJSON serializes the receiver MeasuredComponent into JSON encoded MeasuredComponent
-func (mc MeasuredComponent) ToJSON() ([]byte, error) {
-	return json.Marshal(mc)
 }

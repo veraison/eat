@@ -40,74 +40,73 @@ func (v *Version) UnmarshalCBOR(data []byte) error {
 	}
 	v.Version = version
 	if len(raw) == 2 {
-		var s uint64
-		s, ok := raw[1].(uint64)
-		if !ok {
+		var scheme VersionScheme
+		switch raw[1].(type) {
+		case int:
+			scheme = VersionScheme(raw[1].(int))
+		case uint64:
+			s, _ := raw[1].(uint64)
+			if s > uint64(^uint(0)>>1) {
+				return fmt.Errorf("invalid Version Scheme value: %d", s)
+			}
+			scheme = VersionScheme(s)
+		default:
 			return fmt.Errorf("invalid Version Scheme type: expected int %T", raw[1])
 		}
-		scheme := VersionScheme(s)
 		v.Scheme = &scheme
 	}
 
 	return nil
 }
 
-type VersionScheme int
-
-const (
-	Multipartnumeric VersionScheme = iota + 1
-	MultipartnumericSuffix
-	Alphanumeric
-	Decimal
-	Semver = 16384
-)
-
-var versionSchemeToString = map[VersionScheme]string{
-	Multipartnumeric:       "multipartnumeric",
-	MultipartnumericSuffix: "multipartnumeric-suffix",
-	Alphanumeric:           "alphanumeric",
-	Decimal:                "decimal",
-	Semver:                 "semver",
-}
-
-var stringToVersionScheme = map[string]VersionScheme{
-	"multipartnumeric":        Multipartnumeric,
-	"multipartnumeric-suffix": MultipartnumericSuffix,
-	"alphanumeric":            Alphanumeric,
-	"decimal":                 Decimal,
-	"semver":                  Semver,
-}
-
-func (vs VersionScheme) MarshalJSON() ([]byte, error) {
-	s, ok := versionSchemeToString[vs]
-	if !ok {
-		return nil, fmt.Errorf("invalid VersionScheme: %d", vs)
+func (v Version) MarshalJSON() ([]byte, error) {
+	r := []interface{}{v.Version}
+	if v.Scheme != nil {
+		r = append(r, *v.Scheme)
 	}
-	return json.Marshal(s)
+	return json.Marshal(r)
 }
 
-func (vs *VersionScheme) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
+func (v *Version) UnmarshalJSON(data []byte) error {
+	var raw []interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
-	loc, ok := stringToVersionScheme[s]
+
+	if len(raw) < 1 || len(raw) > 2 {
+		return fmt.Errorf("invalid Version CBOR array length: %d", len(raw))
+	}
+
+	version, ok := raw[0].(string)
 	if !ok {
-		return fmt.Errorf("invalid VersionScheme string: %s", s)
+		return fmt.Errorf("invalid Version type: expected string")
 	}
-	*vs = loc
-	return nil
-}
-
-func (vs VersionScheme) MarshalCBOR() ([]byte, error) {
-	return cbor.Marshal(int(vs))
-}
-
-func (vs *VersionScheme) UnmarshalCBOR(data []byte) error {
-	var i int
-	if err := cbor.Unmarshal(data, &i); err != nil {
-		return err
+	v.Version = version
+	if len(raw) == 2 {
+		var scheme VersionScheme
+		switch raw[1].(type) {
+		case int:
+			scheme = VersionScheme(raw[1].(int))
+		case uint64:
+			s, _ := raw[1].(uint64)
+			if s > uint64(^uint(0)>>1) {
+				return fmt.Errorf("invalid Version Scheme value: %d", s)
+			}
+			scheme = VersionScheme(s)
+		case float64:
+			f, _ := raw[1].(float64)
+			scheme = VersionScheme(int(f))
+		case string:
+			loc, ok := stringToVersionScheme[raw[1].(string)]
+			if !ok {
+				return fmt.Errorf("invalid VersionScheme string: %s", raw[1].(string))
+			}
+			scheme = loc
+		default:
+			return fmt.Errorf("invalid Version Scheme type: expected int %T", raw[1])
+		}
+		v.Scheme = &scheme
 	}
-	*vs = VersionScheme(i)
+
 	return nil
 }

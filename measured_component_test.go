@@ -3,17 +3,10 @@ package eat
 import (
 	"testing"
 
-	cbor "github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMeasuredComponent(t *testing.T) {
-	assert := assert.New(t)
-	decOpt := cbor.DecOptions{
-		IndefLength: cbor.IndefLengthForbidden,
-	}
-	dm, err := decOpt.DecMode()
-	assert.Nil(err)
 	data := []byte{
 		0xA2,             // map(2)
 		0x01,             // unsigned(1)
@@ -32,31 +25,7 @@ func TestMeasuredComponent(t *testing.T) {
 	}
 
 	var mc MeasuredComponent
-	assert.Nil(dm.Unmarshal(data, &mc))
-	assert.Equal(mc.Id.Name, "Foo")
-	assert.Equal(mc.Id.Version.Version, "1.3.4")
-}
-
-func TestMyType(t *testing.T) {
-	assert := assert.New(t)
-	decOpt := cbor.DecOptions{
-		IndefLength: cbor.IndefLengthForbidden,
-	}
-	dm, err := decOpt.DecMode()
-	assert.Nil(err)
-
-	data := []byte{
-		0xA1,             // map(1)
-		0x01,             // unsigned(1)
-		0x81,             // array(1)
-		0x63,             // text(3)
-		0x46, 0x6F, 0x6F, // "Foo"
-	}
-	type MyType struct {
-		Names []string `cbor:"1,keyasint"`
-	}
-	var test MyType
-	assert.Nil(dm.Unmarshal(data, &test))
-	assert.Equal(len(test.Names), 1)
-	assert.Equal(test.Names[0], "Foo")
+	assert.Nil(t, dm.Unmarshal(data, &mc))
+	assert.Equal(t, mc.Id.Name, "Foo")
+	assert.Equal(t, mc.Id.Version.Version, "1.3.4")
 }

@@ -4,9 +4,9 @@
 package eat
 
 import (
+	"encoding/json"
 	"testing"
 
-	cbor "github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,12 +14,30 @@ var (
 	version = "1.3.4"
 	scheme  = Multipartnumeric
 
+	// echo "[\"1.3.4\"]" | diag2cbor.rb | xxd -i
 	encodedVersion = []byte{
 		0x81, 0x65, 0x31, 0x2e, 0x33, 0x2e, 0x34,
 	}
 	// echo "[\"1.3.4\",1]" | diag2cbor.rb | xxd -i
 	encodedVersionMultipartNumeric = []byte{
 		0x82, 0x65, 0x31, 0x2e, 0x33, 0x2e, 0x34, 0x01,
+	}
+	// echo "[\"1.3.4\",h'']" | diag2cbor.rb | xxd -i
+	encodedVersionByteScheme = []byte{
+		0x82, 0x65, 0x31, 0x2e, 0x33, 0x2e, 0x34, 0x40,
+	}
+	// echo "[\"1.3.4\",1,\"rc-1\"]" | diag2cbor.rb | xxd -i
+	encodedVersionLong = []byte{
+		0x83, 0x65, 0x31, 0x2e, 0x33, 0x2e, 0x34, 0x01, 0x64, 0x72, 0x63, 0x2d,
+		0x31,
+	}
+	// echo "[]" | diag2cbor.rb | xxd -i
+	encodedVersionShort = []byte{
+		0x80,
+	}
+	// echo "[]" | diag2cbor.rb | xxd -i
+	encodedVersionBroken = []byte{
+		0x82,
 	}
 )
 
@@ -37,13 +55,86 @@ func TestVersion_CBORMarshal_OK(t *testing.T) {
 
 func TestVersion_CBORUnmarshal_OK(t *testing.T) {
 	var v Version
-	assert.Nil(t, cbor.Unmarshal(encodedVersion, &v))
+	assert.Nil(t, v.UnmarshalCBOR(encodedVersion))
 	assert.NotNil(t, v)
 	assert.Equal(t, version, v.Version)
 	assert.Nil(t, v.Scheme)
 
-	assert.Nil(t, cbor.Unmarshal(encodedVersionMultipartNumeric, &v))
+	assert.Nil(t, v.UnmarshalCBOR(encodedVersionMultipartNumeric))
 	assert.NotNil(t, v)
 	assert.Equal(t, version, v.Version)
 	assert.Equal(t, Multipartnumeric, *v.Scheme)
+}
+
+func TestVersion_CBORUnmarshal_NG(t *testing.T) {
+	var v Version
+	assert.NotNil(t, v.UnmarshalCBOR(encodedVersionByteScheme))
+	assert.NotNil(t, v.UnmarshalCBOR(encodedVersionLong))
+	assert.NotNil(t, v.UnmarshalCBOR(encodedVersionShort))
+	assert.NotNil(t, v.UnmarshalCBOR(encodedVersionBroken))
+}
+
+func TestVersion_JSONMarshal_OK(t *testing.T) {
+	v := Version{Version: version}
+	encoded, err := json.Marshal(v)
+	assert.Nil(t, err)
+	assert.Equal(t, `["1.3.4"]`, string(encoded))
+
+	v = Version{Version: version, Scheme: &scheme}
+	encoded, err = json.Marshal(v)
+	assert.Nil(t, err)
+	assert.Equal(t, `["1.3.4","multipartnumeric"]`, string(encoded))
+}
+
+func TestVersion_JSONUnmarshal_OK(t *testing.T) {
+	var v Version
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4"]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Nil(t, v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4","multipartnumeric"]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Equal(t, Multipartnumeric, *v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",1]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Equal(t, Multipartnumeric, *v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",2]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Equal(t, MultipartnumericSuffix, *v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",3]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Equal(t, Alphanumeric, *v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",4]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Equal(t, Decimal, *v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",16384]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Equal(t, Semver, *v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",100]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, version, v.Version)
+	assert.Equal(t, VersionScheme(100), *v.Scheme)
+}
+
+func TestVersion_JSONUnmarshal_NG(t *testing.T) {
+	var v Version
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",42,"extra"]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",{}]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`[]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",42,"extra",{}]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`'`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`[134]`)))
 }
