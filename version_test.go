@@ -127,14 +127,20 @@ func TestVersion_JSONUnmarshal_OK(t *testing.T) {
 	assert.NotNil(t, v)
 	assert.Equal(t, version, v.Version)
 	assert.Equal(t, VersionScheme(100), *v.Scheme)
+
+	assert.Nil(t, v.UnmarshalJSON([]byte(`[""]`)))
+	assert.NotNil(t, v)
+	assert.Equal(t, "", v.Version)
+	assert.Nil(t, v.Scheme)
 }
 
 func TestVersion_JSONUnmarshal_NG(t *testing.T) {
 	var v Version
-	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",42,"extra"]`)))
-	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",{}]`)))
-	assert.NotNil(t, v.UnmarshalJSON([]byte(`[]`)))
-	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",42,"extra",{}]`)))
 	assert.NotNil(t, v.UnmarshalJSON([]byte(`'`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`134`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`[]`)))
 	assert.NotNil(t, v.UnmarshalJSON([]byte(`[134]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4","extra"]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",{}]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",42,"extra"]`)))
 }

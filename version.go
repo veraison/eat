@@ -82,17 +82,10 @@ func (v *Version) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("invalid Version type: expected string")
 	}
 	v.Version = version
+
 	if len(raw) == 2 {
 		var scheme VersionScheme
 		switch raw[1].(type) {
-		case int:
-			scheme = VersionScheme(raw[1].(int))
-		case uint64:
-			s, _ := raw[1].(uint64)
-			if s > uint64(^uint(0)>>1) {
-				return fmt.Errorf("invalid Version Scheme value: %d", s)
-			}
-			scheme = VersionScheme(s)
 		case float64:
 			f, _ := raw[1].(float64)
 			scheme = VersionScheme(int(f))
@@ -106,6 +99,8 @@ func (v *Version) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf("invalid Version Scheme type: expected int %T", raw[1])
 		}
 		v.Scheme = &scheme
+	} else {
+		v.Scheme = nil
 	}
 
 	return nil
