@@ -3,7 +3,7 @@
 
 package eat
 
-import "github.com/veraison/go-cose"
+import cose "github.com/veraison/go-cose"
 
 type KeyConfirmation struct {
 	Key *COSEKey `cbor:"1,keyasint,omitempty" json:"jwk,omitempty"`

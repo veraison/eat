@@ -10,14 +10,12 @@ import (
 )
 
 func TestSecLevel_Validate(t *testing.T) {
-	assert := assert.New(t)
-
 	var s1 SecurityLevel // default value
-	assert.Nil(s1.Validate())
+	assert.Nil(t, s1.Validate())
 
 	s2 := SecurityLevel(SecLevelHardware)
-	assert.Nil(s2.Validate())
+	assert.Nil(t, s2.Validate())
 
 	s3 := SecurityLevel(1337)
-	assert.EqualError(s3.Validate(), "out of range value 1337 for SecurityLevel type")
+	assert.EqualError(t, s3.Validate(), "out of range value 1337 for SecurityLevel type")
 }

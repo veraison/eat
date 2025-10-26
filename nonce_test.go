@@ -99,11 +99,11 @@ func TestNonce_MarshalCBOR_multiple_ok(t *testing.T) {
 		require.Nil(t, nonces.Add(tv[i]))
 	}
 
-	//82                     # array(2)
-	//   48                  # bytes(8)
-	//      deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
-	//   48                  # bytes(8)
-	//      abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
+	// 82                     # array(2)
+	//    48                  # bytes(8)
+	//       deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
+	//    48                  # bytes(8)
+	//       abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
 	expected := []byte{0x82}
 	expected = append(expected, byte(0x48))
 	expected = append(expected, tv[0]...)
@@ -147,11 +147,11 @@ func TestNonce_UnmarshalCBOR_multiple_ok(t *testing.T) {
 		{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe},
 	}
 
-	//82                     # array(2)
-	//   48                  # bytes(8)
-	//      deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
-	//   48                  # bytes(8)
-	//      abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
+	// 82                     # array(2)
+	//    48                  # bytes(8)
+	//       deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
+	//    48                  # bytes(8)
+	//       abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
 	data := []byte{0x82}
 	data = append(data, byte(0x48))
 	data = append(data, expected[0]...)

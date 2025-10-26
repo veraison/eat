@@ -204,7 +204,7 @@ func TestProfile_MarshalCBOR_OID_OK(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-//  TestProfile_UnmarshalCBOR_OID_OK tests the valid CBOR unmarshaling of profile decoded as OID
+// TestProfile_UnmarshalCBOR_OID_OK tests the valid CBOR unmarshaling of profile decoded as OID
 func TestProfile_UnmarshalCBOR_OID_OK(t *testing.T) {
 	inputOID := "2.5.2.8192"
 	profile, err := NewProfile(inputOID)

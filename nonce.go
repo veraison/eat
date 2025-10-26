@@ -99,9 +99,9 @@ func (n *nonce) UnmarshalJSON(data []byte) error {
 
 // A nonce-claim may be single Nonce or an array of two or more.
 //
-//    nonce-claim = (
-//        nonce => nonce-type / [ 2* nonce-type ]
-//    )
+//	nonce-claim = (
+//	    nonce => nonce-type / [ 2* nonce-type ]
+//	)
 type Nonce []nonce
 
 // Validate checks that all nonce values (of which there must be at least one)

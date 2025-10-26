@@ -13,7 +13,8 @@ import (
 )
 
 // StringOrURI is either an arbitrary text string or a RFC3986 compliant URI.
-//    string-or-uri = tstr / uri
+//
+//	string-or-uri = tstr / uri
 type StringOrURI struct {
 	text *string
 	uri  *url.URL
@@ -49,8 +50,9 @@ func (s *StringOrURI) FromURL(value *url.URL) {
 
 // IsURI returns true iff the underlying value is a URI and not a string.
 // NOTE: this only indicates whether the value was set as such -- it possible
-//       that the arbitrary string value happens to be a valid URI, however, if
-//       it was not set as such, this will return false.
+//
+//	that the arbitrary string value happens to be a valid URI, however, if
+//	it was not set as such, this will return false.
 func (s StringOrURI) IsURI() bool {
 	return s.uri != nil
 }
@@ -128,9 +130,9 @@ func (s *StringOrURI) UnmarshalCBOR(data []byte) error {
 			return fmt.Errorf("must be URI (tag 32), found: %v", tag.Number)
 		}
 
-		switch tag.Content.(type) {
+		switch v := tag.Content.(type) {
 		case string:
-			u, err := url.Parse(tag.Content.(string))
+			u, err := url.Parse(v)
 			if err != nil {
 				return err
 			}

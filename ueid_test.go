@@ -10,56 +10,54 @@ import (
 )
 
 func TestUEID_Verify(t *testing.T) {
-	assert := assert.New(t)
-
 	u0 := UEID{}
-	assert.EqualError(u0.Validate(), "empty UEID")
+	assert.EqualError(t, u0.Validate(), "empty UEID")
 
 	u1 := UEID{
 		0x01, // RAND
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, // 16 bytes
 	}
-	assert.Nil(u1.Validate())
+	assert.Nil(t, u1.Validate())
 
 	u2 := UEID{
 		0x01, // RAND
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, // 15 bytes
 	}
-	assert.EqualError(u2.Validate(), "RAND length must be exactly 16, 24, or 32 bytes; found 15 bytes")
+	assert.EqualError(t, u2.Validate(), "RAND length must be exactly 16, 24, or 32 bytes; found 15 bytes")
 
 	u3 := UEID{
 		0x02,                               // EUI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, // 6 bytes
 	}
-	assert.Nil(u3.Validate())
+	assert.Nil(t, u3.Validate())
 
 	u4 := UEID{
 		0x02, // EUI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, // 15 bytes
 	}
-	assert.EqualError(u4.Validate(), "EUI length must be exactly 6 (EUI-48) or 8 (EUI-60 or EUI-64) bytes; found 15 bytes")
+	assert.EqualError(t, u4.Validate(), "EUI length must be exactly 6 (EUI-48) or 8 (EUI-60 or EUI-64) bytes; found 15 bytes")
 
 	u5 := UEID{
 		0x03, // IMEI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, // 14 bytes
 	}
-	assert.Nil(u5.Validate())
+	assert.Nil(t, u5.Validate())
 
 	u6 := UEID{
 		0x03, // IMEI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, // 15 bytes
 	}
-	assert.EqualError(u6.Validate(), "IMEI length must be exactly 14 bytes; found 15 bytes")
+	assert.EqualError(t, u6.Validate(), "IMEI length must be exactly 14 bytes; found 15 bytes")
 
 	u7 := UEID{
 		0xFF, // Invalid
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 	}
-	assert.EqualError(u7.Validate(), "invalid UEID type 255")
+	assert.EqualError(t, u7.Validate(), "invalid UEID type 255")
 
 }

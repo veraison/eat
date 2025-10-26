@@ -41,15 +41,14 @@ func (v *Version) UnmarshalCBOR(data []byte) error {
 	v.Version = version
 	if len(raw) == 2 {
 		var scheme VersionScheme
-		switch raw[1].(type) {
+		switch v := raw[1].(type) {
 		case int:
-			scheme = VersionScheme(raw[1].(int))
+			scheme = VersionScheme(v)
 		case uint64:
-			s, _ := raw[1].(uint64)
-			if s > uint64(^uint(0)>>1) {
-				return fmt.Errorf("invalid Version Scheme value: %d", s)
+			if v > uint64(^uint(0)>>1) {
+				return fmt.Errorf("invalid Version Scheme value: %d", v)
 			}
-			scheme = VersionScheme(s)
+			scheme = VersionScheme(v)
 		default:
 			return fmt.Errorf("invalid Version Scheme type: expected int %T", raw[1])
 		}
@@ -85,14 +84,13 @@ func (v *Version) UnmarshalJSON(data []byte) error {
 
 	if len(raw) == 2 {
 		var scheme VersionScheme
-		switch raw[1].(type) {
+		switch v := raw[1].(type) {
 		case float64:
-			f, _ := raw[1].(float64)
-			scheme = VersionScheme(int(f))
+			scheme = VersionScheme(int(v))
 		case string:
-			loc, ok := stringToVersionScheme[raw[1].(string)]
+			loc, ok := stringToVersionScheme[v]
 			if !ok {
-				return fmt.Errorf("invalid VersionScheme string: %s", raw[1].(string))
+				return fmt.Errorf("invalid VersionScheme string: %s", v)
 			}
 			scheme = loc
 		default:

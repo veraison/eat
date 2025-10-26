@@ -10,7 +10,7 @@ import (
 )
 
 func TestVersionScheme_CBORMarshal_OK(t *testing.T) {
-	vs := VersionScheme(Multipartnumeric)
+	vs := Multipartnumeric
 	encoded, err := vs.MarshalCBOR()
 	assert.Nil(t, err)
 	assert.Equal(t, []byte{0x01}, encoded)
@@ -19,7 +19,7 @@ func TestVersionScheme_CBORMarshal_OK(t *testing.T) {
 func TestVersionScheme_CBORUnmarshal_OK(t *testing.T) {
 	var vs VersionScheme
 	assert.Nil(t, vs.UnmarshalCBOR([]byte{0x01}))
-	assert.Equal(t, VersionScheme(Multipartnumeric), vs)
+	assert.Equal(t, Multipartnumeric, vs)
 }
 
 func TestVersionScheme_CBORUnmarshal_NG(t *testing.T) {
@@ -34,7 +34,7 @@ func TestVersionScheme_CBORUnmarshal_NG(t *testing.T) {
 }
 
 func TestVersionScheme_JSONMarshal_OK(t *testing.T) {
-	vs := VersionScheme(Multipartnumeric)
+	vs := Multipartnumeric
 	encoded, err := vs.MarshalJSON()
 	assert.Nil(t, err)
 	assert.Equal(t, []byte(`"multipartnumeric"`), encoded)
@@ -49,15 +49,15 @@ func TestVersionScheme_JSONMarshal_NG(t *testing.T) {
 func TestVersionScheme_JSONUnmarshal_OK(t *testing.T) {
 	var vs VersionScheme
 	assert.Nil(t, vs.UnmarshalJSON([]byte(`"multipartnumeric"`)))
-	assert.Equal(t, VersionScheme(Multipartnumeric), vs)
+	assert.Equal(t, Multipartnumeric, vs)
 	assert.Nil(t, vs.UnmarshalJSON([]byte(`2`)))
-	assert.Equal(t, VersionScheme(MultipartnumericSuffix), vs)
+	assert.Equal(t, MultipartnumericSuffix, vs)
 	assert.Nil(t, vs.UnmarshalJSON([]byte(`3`)))
-	assert.Equal(t, VersionScheme(Alphanumeric), vs)
+	assert.Equal(t, Alphanumeric, vs)
 	assert.Nil(t, vs.UnmarshalJSON([]byte(`4`)))
-	assert.Equal(t, VersionScheme(Decimal), vs)
+	assert.Equal(t, Decimal, vs)
 	assert.Nil(t, vs.UnmarshalJSON([]byte(`16384`)))
-	assert.Equal(t, VersionScheme(Semver), vs)
+	assert.Equal(t, Semver, vs)
 	assert.Nil(t, vs.UnmarshalJSON([]byte(`5`)))
 	assert.Equal(t, VersionScheme(5), vs)
 	assert.Equal(t, "", versionSchemeToString[vs])

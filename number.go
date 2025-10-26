@@ -8,7 +8,8 @@ import (
 )
 
 // Number models a CDDL number, i.e.:
-//   uint / nint / float16 / float32 / float64
+//
+//	uint / nint / float16 / float32 / float64
 type Number float64
 
 // MarshalCBOR encodes a Number using the smallest possible encoding.
