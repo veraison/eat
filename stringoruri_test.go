@@ -114,6 +114,19 @@ func TestStringOrURI_UnmarshalCBOR(t *testing.T) {
 	assert.Equal(expected, actual)
 
 	// Bad tag value (corrupted initial byte)
+	// d7 20                                   # tag [corrupted]
+	//    72                                   # text(18)
+	//          687474703a2f2f6578616d706c652e636f6d # "http://example.com"
+	data = []byte{
+		0xd7, 0x20, 0x72, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x65,
+		0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d,
+	}
+
+	err = actual.UnmarshalCBOR(data)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "bytes of extraneous data starting at index")
+
+	// Bad tag value (corrupted initial byte)
 	// d8 21                                   # tag [corrupted]
 	//    72                                   # text(18)
 	//          687474703a2f2f6578616d706c652e636f6d # "http://example.com"
@@ -146,4 +159,51 @@ func TestStringOrURI_UnmarshalCBOR(t *testing.T) {
 	err = actual.UnmarshalCBOR(data)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "URI tag value must be a string")
+}
+
+func TestStringOrUri_UnmarshalJSON(t *testing.T) {
+	assert := assert.New(t)
+
+	urlText := "http://example.com"
+	u, err := url.Parse(urlText)
+	assert.Nil(err)
+
+	var expected StringOrURI
+	expected.FromURL(u)
+
+	data := []byte(`"` + urlText + `"`)
+
+	var actual StringOrURI
+	err = actual.UnmarshalJSON(data)
+	assert.Nil(err)
+	assert.Equal(expected, actual)
+
+	err = expected.FromString("% Acme Inc. %")
+	assert.Nil(err)
+
+	data = []byte(`"% Acme Inc. %"`)
+
+	err = actual.UnmarshalJSON(data)
+	assert.Nil(err)
+	assert.Equal(expected, actual)
+}
+
+func TestStringOrUri_UnmarshalJSON_NG(t *testing.T) {
+	assert := assert.New(t)
+
+	var s StringOrURI
+
+	// not a string
+	data := []byte(`134`)
+
+	err := s.UnmarshalJSON(data)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "cannot unmarshal number into Go value of type string")
+
+	// invalid URI
+	data = []byte(`"http://[::1"`)
+
+	err = s.UnmarshalJSON(data)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "parse")
 }
