@@ -7,10 +7,12 @@ import "fmt"
 
 /*
 security-level-type = &(
-    unrestricted: 1,
-    restricted: 2,
-    secure-restricted: 3,
-    hardware: 4
+
+	unrestricted: 1,
+	restricted: 2,
+	secure-restricted: 3,
+	hardware: 4
+
 )
 */
 const (
@@ -32,7 +34,8 @@ const (
 	// security goal, security at this level is aimed defending well
 	// against large-scale network / remote attacks against the device.
 	//
-	// [1] https://fidoalliance.org/specs/fido-security-requirements-v1.0-fd-20170524/fido-authenticator-allowed-restricted-operating-environments-list_20170524.pdf
+	// [1] https://fidoalliance.org/specs/fido-security-requirements-v1.0-fd-20170524/
+	// fido-authenticator-allowed-restricted-operating-environments-list_20170524.pdf
 	SecLevelSecureRestricted
 
 	// Entities at this level must include substantial defense against
