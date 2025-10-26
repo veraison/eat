@@ -63,8 +63,6 @@ func (vs *VersionScheme) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf("invalid VersionScheme value: %v", s)
 		}
 		*vs = t
-	case int:
-		*vs = VersionScheme(s)
 	default:
 		return fmt.Errorf("invalid VersionScheme input %T", s)
 	}
