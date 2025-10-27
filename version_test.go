@@ -11,8 +11,11 @@ import (
 )
 
 var (
-	version = "1.3.4"
-	scheme  = Multipartnumeric
+	version                 = "1.3.4"
+	versionMultipartNumeric = "1.3.4-beta"
+	versionAlphanumeric     = "v1beta2"
+	versionDecimal          = "134"
+	scheme                  = Multipartnumeric
 
 	// echo "[\"1.3.4\"]" | diag2cbor.rb | xxd -i
 	encodedVersion = []byte{
@@ -26,10 +29,9 @@ var (
 	encodedVersionByteScheme = []byte{
 		0x82, 0x65, 0x31, 0x2e, 0x33, 0x2e, 0x34, 0x40,
 	}
-	// echo "[\"1.3.4\",1,\"rc-1\"]" | diag2cbor.rb | xxd -i
+	// echo "[\"1.3.4\",1,\"rc1\"]" | diag2cbor.rb | xxd -i
 	encodedVersionLong = []byte{
-		0x83, 0x65, 0x31, 0x2e, 0x33, 0x2e, 0x34, 0x01, 0x64, 0x72, 0x63, 0x2d,
-		0x31,
+		0x83, 0x65, 0x31, 0x2e, 0x33, 0x2e, 0x34, 0x01, 0x64, 0x72, 0x63, 0x31,
 	}
 	// echo "[]" | diag2cbor.rb | xxd -i
 	encodedVersionShort = []byte{
@@ -103,19 +105,19 @@ func TestVersion_JSONUnmarshal_OK(t *testing.T) {
 	assert.Equal(t, version, v.Version)
 	assert.Equal(t, Multipartnumeric, *v.Scheme)
 
-	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",2]`)))
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4-beta",2]`)))
 	assert.NotNil(t, v)
-	assert.Equal(t, version, v.Version)
+	assert.Equal(t, versionMultipartNumeric, v.Version)
 	assert.Equal(t, MultipartnumericSuffix, *v.Scheme)
 
-	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",3]`)))
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["v1beta2",3]`)))
 	assert.NotNil(t, v)
-	assert.Equal(t, version, v.Version)
+	assert.Equal(t, versionAlphanumeric, v.Version)
 	assert.Equal(t, Alphanumeric, *v.Scheme)
 
-	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",4]`)))
+	assert.Nil(t, v.UnmarshalJSON([]byte(`["134",4]`)))
 	assert.NotNil(t, v)
-	assert.Equal(t, version, v.Version)
+	assert.Equal(t, versionDecimal, v.Version)
 	assert.Equal(t, Decimal, *v.Scheme)
 
 	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",16384]`)))
