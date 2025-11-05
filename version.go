@@ -25,6 +25,7 @@ func (v Version) MarshalCBOR() ([]byte, error) {
 	return cbor.Marshal(r)
 }
 
+//nolint:dupl
 func (v *Version) UnmarshalCBOR(data []byte) error {
 	var raw []cbor.RawMessage
 	if err := cbor.Unmarshal(data, &raw); err != nil {
@@ -58,6 +59,7 @@ func (v Version) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r)
 }
 
+//nolint:dupl
 func (v *Version) UnmarshalJSON(data []byte) error {
 	var raw []json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -65,7 +67,7 @@ func (v *Version) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(raw) < 1 || len(raw) > 2 {
-		return fmt.Errorf("invalid Version CBOR array length: %d", len(raw))
+		return fmt.Errorf("invalid Version JSON array length: %d", len(raw))
 	}
 
 	if err := json.Unmarshal(raw[0], &v.Version); err != nil {
