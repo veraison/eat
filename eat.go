@@ -37,7 +37,9 @@ func (e *Eat) FromCBOR(data []byte) error {
 	return dm.Unmarshal(data, e)
 }
 
-//nolint:gocritic // ToCBOR serializes the receiver Eat into CBOR encoded EAT
+// ToCBOR serializes the receiver Eat into CBOR encoded EAT
+//
+//nolint:gocritic
 func (e Eat) ToCBOR() ([]byte, error) {
 	return em.Marshal(e)
 }
@@ -47,7 +49,9 @@ func (e *Eat) FromJSON(data []byte) error {
 	return json.Unmarshal(data, e)
 }
 
-//nolint:gocritic // ToJSON serializes the receiver Eat into JSON encoded EAT
+// ToJSON serializes the receiver Eat into JSON encoded EAT
+//
+//nolint:gocritic
 func (e Eat) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
