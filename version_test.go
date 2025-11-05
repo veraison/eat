@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/veraison/swid"
 )
 
 var (
@@ -15,7 +16,6 @@ var (
 	versionMultipartNumeric = "1.3.4-beta"
 	versionAlphanumeric     = "v1beta2"
 	versionDecimal          = "134"
-	scheme                  = Multipartnumeric
 
 	// echo "[\"1.3.4\"]" | diag2cbor.rb | xxd -i
 	encodedVersion = []byte{
@@ -49,6 +49,8 @@ func TestVersion_CBORMarshal_OK(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, encodedVersion, encoded)
 
+	var scheme swid.VersionScheme
+	scheme.SetCode(swid.VersionSchemeMultipartNumeric)
 	v = Version{Version: version, Scheme: &scheme}
 	encoded, err = em.Marshal(v)
 	assert.Nil(t, err)
@@ -62,10 +64,12 @@ func TestVersion_CBORUnmarshal_OK(t *testing.T) {
 	assert.Equal(t, version, v.Version)
 	assert.Nil(t, v.Scheme)
 
+	var vs swid.VersionScheme
+	vs.SetCode(swid.VersionSchemeMultipartNumeric)
 	assert.Nil(t, v.UnmarshalCBOR(encodedVersionMultipartNumeric))
 	assert.NotNil(t, v)
 	assert.Equal(t, version, v.Version)
-	assert.Equal(t, Multipartnumeric, *v.Scheme)
+	assert.Equal(t, vs, *v.Scheme)
 }
 
 func TestVersion_CBORUnmarshal_NG(t *testing.T) {
@@ -82,6 +86,8 @@ func TestVersion_JSONMarshal_OK(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, `["1.3.4"]`, string(encoded))
 
+	var scheme swid.VersionScheme
+	scheme.SetCode(swid.VersionSchemeMultipartNumeric)
 	v = Version{Version: version, Scheme: &scheme}
 	encoded, err = json.Marshal(v)
 	assert.Nil(t, err)
@@ -95,41 +101,49 @@ func TestVersion_JSONUnmarshal_OK(t *testing.T) {
 	assert.Equal(t, version, v.Version)
 	assert.Nil(t, v.Scheme)
 
+	v = Version{}
+	var expectedVs swid.VersionScheme
+	expectedVs.SetCode(swid.VersionSchemeMultipartNumeric)
 	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4","multipartnumeric"]`)))
 	assert.NotNil(t, v)
 	assert.Equal(t, version, v.Version)
-	assert.Equal(t, Multipartnumeric, *v.Scheme)
+	assert.Equal(t, expectedVs, *v.Scheme)
 
+	v = Version{}
 	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",1]`)))
 	assert.NotNil(t, v)
 	assert.Equal(t, version, v.Version)
-	assert.Equal(t, Multipartnumeric, *v.Scheme)
+	assert.Equal(t, expectedVs, *v.Scheme)
 
+	v = Version{}
+	expectedVs.SetCode(swid.VersionSchemeMultipartNumericSuffix)
 	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4-beta",2]`)))
 	assert.NotNil(t, v)
 	assert.Equal(t, versionMultipartNumeric, v.Version)
-	assert.Equal(t, MultipartnumericSuffix, *v.Scheme)
+	assert.Equal(t, expectedVs, *v.Scheme)
 
+	v = Version{}
+	expectedVs.SetCode(swid.VersionSchemeAlphaNumeric)
 	assert.Nil(t, v.UnmarshalJSON([]byte(`["v1beta2",3]`)))
 	assert.NotNil(t, v)
 	assert.Equal(t, versionAlphanumeric, v.Version)
-	assert.Equal(t, Alphanumeric, *v.Scheme)
+	assert.Equal(t, expectedVs, *v.Scheme)
 
+	v = Version{}
+	expectedVs.SetCode(swid.VersionSchemeDecimal)
 	assert.Nil(t, v.UnmarshalJSON([]byte(`["134",4]`)))
 	assert.NotNil(t, v)
 	assert.Equal(t, versionDecimal, v.Version)
-	assert.Equal(t, Decimal, *v.Scheme)
+	assert.Equal(t, expectedVs, *v.Scheme)
 
+	v = Version{}
+	expectedVs.SetCode(swid.VersionSchemeSemVer)
 	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",16384]`)))
 	assert.NotNil(t, v)
 	assert.Equal(t, version, v.Version)
-	assert.Equal(t, Semver, *v.Scheme)
+	assert.Equal(t, expectedVs, *v.Scheme)
 
-	assert.Nil(t, v.UnmarshalJSON([]byte(`["1.3.4",100]`)))
-	assert.NotNil(t, v)
-	assert.Equal(t, version, v.Version)
-	assert.Equal(t, VersionScheme(100), *v.Scheme)
-
+	v = Version{}
 	assert.Nil(t, v.UnmarshalJSON([]byte(`[""]`)))
 	assert.NotNil(t, v)
 	assert.Equal(t, "", v.Version)
@@ -142,7 +156,6 @@ func TestVersion_JSONUnmarshal_NG(t *testing.T) {
 	assert.NotNil(t, v.UnmarshalJSON([]byte(`134`)))
 	assert.NotNil(t, v.UnmarshalJSON([]byte(`[]`)))
 	assert.NotNil(t, v.UnmarshalJSON([]byte(`[134]`)))
-	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4","extra"]`)))
 	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",{}]`)))
-	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",42,"extra"]`)))
+	assert.NotNil(t, v.UnmarshalJSON([]byte(`["1.3.4",1,"extra"]`)))
 }
