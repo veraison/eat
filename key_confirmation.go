@@ -7,10 +7,9 @@ import cose "github.com/veraison/go-cose"
 
 type KeyConfirmation struct {
 	Key *COSEKey `cbor:"1,keyasint,omitempty" json:"jwk,omitempty"`
-	// XXX: Correct? are there any appropriate type for COSE_Encrypt / COSE_Encrypt0?
-	EncryptedCoseKey *interface{} `cbor:"2,keyasint,omitempty" json:"jwe,omitempty"`
-	Kid              *[]byte      `cbor:"3,keyasint,omitempty" json:"kid,omitempty"`
-	KeyThumbprint    *[]byte      `cbor:"5,keyasint,omitempty" json:"jkt,omitempty"`
+	// TODO: EncryptedKey (currently go-cose doesn't support COSE_Encrypt0 / COSE_Encrypt)
+	Kid           *[]byte `cbor:"3,keyasint,omitempty" json:"kid,omitempty"`
+	KeyThumbprint *[]byte `cbor:"5,keyasint,omitempty" json:"jkt,omitempty"`
 }
 
 /*
