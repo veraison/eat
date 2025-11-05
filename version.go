@@ -8,12 +8,13 @@ import (
 	"fmt"
 
 	cbor "github.com/fxamacker/cbor/v2"
+	"github.com/veraison/swid"
 )
 
 type Version struct {
 	_       struct{} `cbor:",toarray"`
 	Version string
-	Scheme  *VersionScheme
+	Scheme  *swid.VersionScheme
 }
 
 func (v Version) MarshalCBOR() ([]byte, error) {
@@ -25,7 +26,7 @@ func (v Version) MarshalCBOR() ([]byte, error) {
 }
 
 func (v *Version) UnmarshalCBOR(data []byte) error {
-	var raw []interface{}
+	var raw []cbor.RawMessage
 	if err := cbor.Unmarshal(data, &raw); err != nil {
 		return err
 	}
@@ -34,25 +35,16 @@ func (v *Version) UnmarshalCBOR(data []byte) error {
 		return fmt.Errorf("invalid Version CBOR array length: %d", len(raw))
 	}
 
-	version, ok := raw[0].(string)
-	if !ok {
+	if err := cbor.Unmarshal(raw[0], &v.Version); err != nil {
 		return fmt.Errorf("invalid Version type: expected string")
 	}
-	v.Version = version
-	if len(raw) == 2 {
-		var scheme VersionScheme
-		switch v := raw[1].(type) {
-		case int:
-			scheme = VersionScheme(v)
-		case uint64:
-			if v > uint64(^uint(0)>>1) {
-				return fmt.Errorf("invalid Version Scheme value: %d", v)
-			}
-			scheme = VersionScheme(v)
-		default:
-			return fmt.Errorf("invalid Version Scheme type: expected int %T", raw[1])
-		}
-		v.Scheme = &scheme
+	if len(raw) == 1 {
+		// no version scheme
+		return nil
+	}
+
+	if err := cbor.Unmarshal(raw[1], &v.Scheme); err != nil {
+		return err
 	}
 
 	return nil
@@ -67,7 +59,7 @@ func (v Version) MarshalJSON() ([]byte, error) {
 }
 
 func (v *Version) UnmarshalJSON(data []byte) error {
-	var raw []interface{}
+	var raw []json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
@@ -76,29 +68,16 @@ func (v *Version) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("invalid Version CBOR array length: %d", len(raw))
 	}
 
-	version, ok := raw[0].(string)
-	if !ok {
+	if err := json.Unmarshal(raw[0], &v.Version); err != nil {
 		return fmt.Errorf("invalid Version type: expected string")
 	}
-	v.Version = version
+	if len(raw) == 1 {
+		// no version scheme
+		return nil
+	}
 
-	if len(raw) == 2 {
-		var scheme VersionScheme
-		switch v := raw[1].(type) {
-		case float64:
-			scheme = VersionScheme(int(v))
-		case string:
-			loc, ok := stringToVersionScheme[v]
-			if !ok {
-				return fmt.Errorf("invalid VersionScheme string: %s", v)
-			}
-			scheme = loc
-		default:
-			return fmt.Errorf("invalid Version Scheme type: expected int %T", raw[1])
-		}
-		v.Scheme = &scheme
-	} else {
-		v.Scheme = nil
+	if err := json.Unmarshal(raw[1], &v.Scheme); err != nil {
+		return err
 	}
 
 	return nil
