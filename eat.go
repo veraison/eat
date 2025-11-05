@@ -9,8 +9,10 @@ import (
 
 // Eat is the internal representation of a EAT token
 type Eat struct {
-	Nonce           *Nonce    `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
-	UEID            *UEID     `cbor:"256,keyasint,omitempty" json:"ueid,omitempty"`
+	Nonce *Nonce `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
+	UEID  *UEID  `cbor:"256,keyasint,omitempty" json:"ueid,omitempty"`
+	// TODO: support SUEIDs
+	// TODO: support oemid-pem = int type
 	OemID           *[]byte   `cbor:"258,keyasint,omitempty" json:"oemid,omitempty"`
 	HardwareModel   *[]byte   `cbor:"259,keyasint,omitempty" json:"hwmodel,omitempty"`
 	HardwareVersion *Version  `cbor:"260,keyasint,omitempty" json:"hwversion,omitempty"`
