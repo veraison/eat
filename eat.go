@@ -26,7 +26,7 @@ type Eat struct {
 	SoftwareName    *StringOrURI   `cbor:"270,keyasint,omitempty" json:"swname,omitempty"`
 	SoftwareVersion *Version       `cbor:"271,keyasint,omitempty" json:"swversion,omitempty"`
 	Manifests       *[]Manifest    `cbor:"272,keyasint,omitempty" json:"manifests,omitempty"`
-	Measurementss   *[]Measurement `cbor:"273,keyasint,omitempty" json:"measurements,omitempty"`
+	Measurements    *[]Measurement `cbor:"273,keyasint,omitempty" json:"measurements,omitempty"`
 	// TODO: MeasrementResults
 	// TODO: IntendedUse
 	CWTClaims
