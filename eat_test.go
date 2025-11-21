@@ -167,7 +167,7 @@ func TestEat_Full_RoundtripJSON(t *testing.T) {
 		"lat": 12.34,
 		"long": 56.78
 	},
-	"ueid": "Ad6tvu/erb7v3q2+796tvu8=",
+	"ueid": "Ad6tvu_erb7v3q2-796tvu8",
 	"uptime": 60,
 	"iss": "Acme Inc.",
 	"sub": "rr-trap",
