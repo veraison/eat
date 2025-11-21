@@ -6,16 +6,14 @@ package eat
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/veraison/swid"
 )
 
 type MeasuredComponent struct {
-	Id             ComponentID     `cbor:"1,keyasint" json:"id"`
-	Measurement    *swid.HashEntry `cbor:"2,keyasint,omitempty" json:"measurement,omitempty"`
-	Signers        *[]B64Url       `cbor:"3,keyasint,omitempty" json:"signers,omitempty"`
-	Flags          *B64Url         `cbor:"4,keyasint,omitempty" json:"flags,omitempty"`
-	RawMeasurement *B64Url         `cbor:"5,keyasint,omitempty" json:"raw-measurement,omitempty"`
+	Id             ComponentID `cbor:"1,keyasint" json:"id"`
+	Measurement    *Digest     `cbor:"2,keyasint,omitempty" json:"measurement,omitempty"`
+	Signers        *[]B64Url   `cbor:"3,keyasint,omitempty" json:"signers,omitempty"`
+	Flags          *B64Url     `cbor:"4,keyasint,omitempty" json:"flags,omitempty"`
+	RawMeasurement *B64Url     `cbor:"5,keyasint,omitempty" json:"raw-measurement,omitempty"`
 }
 
 type ComponentID struct {
