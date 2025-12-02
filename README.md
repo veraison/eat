@@ -12,8 +12,8 @@ claim | CBOR key id | Supported?
 --|--|--
 eat_nonce | 10 | ✅
 ueid | 256 | ✅
-sueids | 257 | :x:
-oemid | 258 | :warning: currently `oemid-pem (int)` is not supported
+sueids | 257 | ✅
+oemid | 258 | ✅
 hwmodel | 259 | ✅
 hwversion | 260 | ✅
 uptime | 261 | ✅
@@ -24,13 +24,13 @@ eat_profile | 265 | ✅
 submods | 266 | ✅
 bootcount | 267 | ✅
 bootseed | 268 | ✅
-dloas | 269 | :x:
+dloas | 269 | ✅
 swname | 270 | ✅
 swversion | 271 | ✅
 manifests | 272 | ⚠️ (see [Supported Type for Manifests and Measurements](#supported-type-for-manifests-and-measurements))
 measurements | 273 | ⚠️ (see [Supported Type for Manifests and Measurements](#supported-type-for-manifests-and-measurements))
-measres | 274 | :x:
-intuse | 275 | :x:
+measres | 274 | ✅
+intuse | 275 | ✅
 
 ## Supported CWT Features
 

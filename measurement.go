@@ -6,5 +6,5 @@ package eat
 type Measurement struct {
 	_      struct{} `cbor:",toarray"` // TODO: implement Unmarshal.JSON
 	Type   int      // coap-content-format, see https://www.iana.org/assignments/core-parameters/core-parameters.xhtml
-	Format []byte   // bstr wrapped untagged-coswid, measured-component, ...
+	Format B64Url   // bstr wrapped untagged-coswid, measured-component, ...
 }

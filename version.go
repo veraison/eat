@@ -22,13 +22,13 @@ func (v Version) MarshalCBOR() ([]byte, error) {
 	if v.Scheme != nil {
 		r = append(r, *v.Scheme)
 	}
-	return cbor.Marshal(r)
+	return em.Marshal(r)
 }
 
 //nolint:dupl
 func (v *Version) UnmarshalCBOR(data []byte) error {
 	var raw []cbor.RawMessage
-	if err := cbor.Unmarshal(data, &raw); err != nil {
+	if err := dm.Unmarshal(data, &raw); err != nil {
 		return err
 	}
 
@@ -36,7 +36,7 @@ func (v *Version) UnmarshalCBOR(data []byte) error {
 		return fmt.Errorf("invalid Version CBOR array length: %d", len(raw))
 	}
 
-	if err := cbor.Unmarshal(raw[0], &v.Version); err != nil {
+	if err := dm.Unmarshal(raw[0], &v.Version); err != nil {
 		return fmt.Errorf("invalid Version type: expected string")
 	}
 	if len(raw) == 1 {
@@ -44,7 +44,7 @@ func (v *Version) UnmarshalCBOR(data []byte) error {
 		return nil
 	}
 
-	if err := cbor.Unmarshal(raw[1], &v.Scheme); err != nil {
+	if err := dm.Unmarshal(raw[1], &v.Scheme); err != nil {
 		return err
 	}
 
