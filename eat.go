@@ -77,6 +77,13 @@ func (b *B64Url) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	// while base64.RawURLEncoding.DecodeString("") returns
+	// no err, we need to return err because the CDDL definition is here,
+	// base64-url-text = tstr .regexp "[A-Za-z0-9_-]+"
+	if len(encoded) == 0 {
+		return fmt.Errorf("base64url must be a non-empty string")
+	}
+
 	// decode base64url-encoded string
 	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
 	if err != nil {
