@@ -5,7 +5,11 @@ package eat
 
 import (
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
 	"fmt"
+	"math/big"
 
 	cose "github.com/veraison/go-cose"
 )
@@ -37,6 +41,93 @@ type COSEKey struct {
 }
 
 type thumbprintHandler func() ([]byte, error)
+
+type CurveInfo struct {
+	COSECurve cose.Curve
+	KeySize   int
+}
+
+var curveInfos = map[string]CurveInfo{
+	"P-256": {COSECurve: cose.CurveP256, KeySize: 32},
+	"P-384": {COSECurve: cose.CurveP384, KeySize: 48},
+	"P-521": {COSECurve: cose.CurveP521, KeySize: 66},
+}
+
+func curveName(c elliptic.Curve) string {
+	switch c {
+	case elliptic.P256():
+		return "P-256"
+	case elliptic.P384():
+		return "P-384"
+	case elliptic.P521():
+		return "P-521"
+	default:
+		return "unknown"
+	}
+}
+
+func (c *COSEKey) FromECDSAPublicKey(key *ecdsa.PublicKey) error {
+	curve, ok := curveInfos[curveName(key.Curve)]
+	if !ok {
+		return fmt.Errorf("unknown curve for ECDSA: %d", key.Curve)
+	}
+
+	x, err := paddedBytes(key.X, curve.KeySize)
+	if err != nil {
+		return err
+	}
+	y, err := paddedBytes(key.Y, curve.KeySize)
+	if err != nil {
+		return err
+	}
+
+	c.Type = cose.KeyTypeEC2
+	c.Crv = curve.COSECurve
+	c.X = x
+	c.Y = y
+	return nil
+}
+
+func (c *COSEKey) FromECDSAPrivateKey(key *ecdsa.PrivateKey) error {
+	pub := key.PublicKey
+	curve, ok := curveInfos[curveName(pub.Curve)]
+	if !ok {
+		return fmt.Errorf("unknown curve for ECDSA: %d", key.Curve)
+	}
+
+	d, err := paddedBytes(key.D, curve.KeySize)
+	if err != nil {
+		return err
+	}
+	c.D = d
+	return c.FromECDSAPublicKey(&pub)
+}
+
+func (c *COSEKey) FromEd25519PublicKey(pub ed25519.PublicKey) error {
+	c.Type = cose.KeyTypeOKP
+	c.Crv = cose.CurveEd25519
+	c.X = pub
+	return nil
+}
+
+func (c *COSEKey) FromEd25519KeyPair(priv ed25519.PrivateKey, pub ed25519.PublicKey) error {
+	c.Type = cose.KeyTypeOKP
+	c.Crv = cose.CurveEd25519
+	c.X = pub
+	c.D = priv
+	return nil
+}
+
+// paddedBytes returns fixed-length bytes from big.Int
+func paddedBytes(n *big.Int, size int) ([]byte, error) {
+	b := n.Bytes()
+	if len(b) > size {
+		return nil, fmt.Errorf("integer too large for field size")
+	}
+	padded := make([]byte, size)
+	copy(padded[size-len(b):], b) // Zero-pad on the left (right-aligned)
+	return padded, nil
+}
 
 //nolint:gocritic
 func (k COSEKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
