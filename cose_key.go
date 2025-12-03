@@ -38,6 +38,7 @@ type COSEKey struct {
 
 type thumbprintHandler func() ([]byte, error)
 
+//nolint:gocritic
 func (k COSEKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
 	if !hash.Available() {
 		return nil, fmt.Errorf("unsupported hash function: %d", hash)
@@ -62,6 +63,7 @@ func (k COSEKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
+//nolint:gocritic
 func (k COSEKey) calcOKPThumbprint() ([]byte, error) {
 	if k.Type != cose.KeyTypeOKP {
 		return nil, fmt.Errorf("invalid struct for OKP key: Type must be OKP (1)")
@@ -104,6 +106,7 @@ func (k COSEKey) calcOKPThumbprint() ([]byte, error) {
 	return em.Marshal(m)
 }
 
+//nolint:gocritic
 func (k COSEKey) calcEC2Thumbprint() ([]byte, error) {
 	if k.Type != cose.KeyTypeEC2 {
 		return nil, fmt.Errorf("invalid struct for EC2 key: Type must be EC2 (2)")
