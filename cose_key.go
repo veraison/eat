@@ -147,6 +147,12 @@ func (c *COSEKey) FromECDSAPrivateKey(key *ecdsa.PrivateKey) error {
 }
 
 func (c *COSEKey) FromEd25519PublicKey(pub ed25519.PublicKey) error {
+	if pub == nil {
+		return fmt.Errorf("invalid key: pub must not be nil")
+	}
+	if len(pub) != 32 {
+		return fmt.Errorf("invalid key length: the length of pub must be 32")
+	}
 	c.Type = cose.KeyTypeOKP
 	c.Crv = cose.CurveEd25519
 	c.X = pub
@@ -154,6 +160,12 @@ func (c *COSEKey) FromEd25519PublicKey(pub ed25519.PublicKey) error {
 }
 
 func (c *COSEKey) FromEd25519KeyPair(priv ed25519.PrivateKey, pub ed25519.PublicKey) error {
+	if priv == nil || pub == nil {
+		return fmt.Errorf("invalid key: priv and pub must not be nil")
+	}
+	if len(priv) != 32 || len(pub) != 32 {
+		return fmt.Errorf("invalid key length: the length of priv and pub must be 32")
+	}
 	c.Type = cose.KeyTypeOKP
 	c.Crv = cose.CurveEd25519
 	c.X = pub
