@@ -83,33 +83,7 @@ func NewKeyFromPrivate(priv crypto.PrivateKey) (*COSEKey, error) {
 	}
 }
 
-type thumbprintHandler func() ([]byte, error)
-
-type CurveInfo struct {
-	COSECurve cose.Curve
-	KeySize   int
-}
-
-var curveInfos = map[string]CurveInfo{
-	"P-256": {COSECurve: cose.CurveP256, KeySize: 32},
-	"P-384": {COSECurve: cose.CurveP384, KeySize: 48},
-	"P-521": {COSECurve: cose.CurveP521, KeySize: 66},
-}
-
-func curveName(c elliptic.Curve) string {
-	switch c {
-	case elliptic.P256():
-		return "P-256"
-	case elliptic.P384():
-		return "P-384"
-	case elliptic.P521():
-		return "P-521"
-	default:
-		return "unknown"
-	}
-}
-
-func (c *COSEKey) FromECDSAPublicKey(key *ecdsa.PublicKey) error {
+func (k *COSEKey) FromECDSAPublicKey(key *ecdsa.PublicKey) error {
 	curve, ok := curveInfos[curveName(key.Curve)]
 	if !ok {
 		return fmt.Errorf("unknown curve for ECDSA: %d", key.Curve)
@@ -124,14 +98,14 @@ func (c *COSEKey) FromECDSAPublicKey(key *ecdsa.PublicKey) error {
 		return err
 	}
 
-	c.Type = cose.KeyTypeEC2
-	c.Crv = curve.COSECurve
-	c.X = x
-	c.Y = y
+	k.Type = cose.KeyTypeEC2
+	k.Crv = curve.COSECurve
+	k.X = x
+	k.Y = y
 	return nil
 }
 
-func (c *COSEKey) FromECDSAPrivateKey(key *ecdsa.PrivateKey) error {
+func (k *COSEKey) FromECDSAPrivateKey(key *ecdsa.PrivateKey) error {
 	pub := key.PublicKey
 	curve, ok := curveInfos[curveName(pub.Curve)]
 	if !ok {
@@ -142,46 +116,35 @@ func (c *COSEKey) FromECDSAPrivateKey(key *ecdsa.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	c.D = d
-	return c.FromECDSAPublicKey(&pub)
+	k.D = d
+	return k.FromECDSAPublicKey(&pub)
 }
 
-func (c *COSEKey) FromEd25519PublicKey(pub ed25519.PublicKey) error {
+func (k *COSEKey) FromEd25519PublicKey(pub ed25519.PublicKey) error {
 	if pub == nil {
 		return fmt.Errorf("invalid key: pub must not be nil")
 	}
 	if len(pub) != 32 {
 		return fmt.Errorf("invalid key length: the length of pub must be 32")
 	}
-	c.Type = cose.KeyTypeOKP
-	c.Crv = cose.CurveEd25519
-	c.X = pub
+	k.Type = cose.KeyTypeOKP
+	k.Crv = cose.CurveEd25519
+	k.X = pub
 	return nil
 }
 
-func (c *COSEKey) FromEd25519KeyPair(priv ed25519.PrivateKey, pub ed25519.PublicKey) error {
+func (k *COSEKey) FromEd25519KeyPair(priv ed25519.PrivateKey, pub ed25519.PublicKey) error {
 	if priv == nil || pub == nil {
 		return fmt.Errorf("invalid key: priv and pub must not be nil")
 	}
 	if len(priv) != 32 || len(pub) != 32 {
 		return fmt.Errorf("invalid key length: the length of priv and pub must be 32")
 	}
-	c.Type = cose.KeyTypeOKP
-	c.Crv = cose.CurveEd25519
-	c.X = pub
-	c.D = priv
+	k.Type = cose.KeyTypeOKP
+	k.Crv = cose.CurveEd25519
+	k.X = pub
+	k.D = priv
 	return nil
-}
-
-// paddedBytes returns fixed-length bytes from big.Int
-func paddedBytes(n *big.Int, size int) ([]byte, error) {
-	b := n.Bytes()
-	if len(b) > size {
-		return nil, fmt.Errorf("integer too large for field size")
-	}
-	padded := make([]byte, size)
-	copy(padded[size-len(b):], b) // Zero-pad on the left (right-aligned)
-	return padded, nil
 }
 
 //nolint:gocritic
@@ -190,6 +153,7 @@ func (k COSEKey) Thumbprint(hash crypto.Hash) ([]byte, error) {
 		return nil, fmt.Errorf("unsupported hash function: %d", hash)
 	}
 
+	type thumbprintHandler func() ([]byte, error)
 	handlers := map[cose.KeyType]thumbprintHandler{
 		cose.KeyTypeOKP: k.calcOKPThumbprint,
 		cose.KeyTypeEC2: k.calcEC2Thumbprint,
@@ -290,4 +254,39 @@ func (k COSEKey) calcEC2Thumbprint() ([]byte, error) {
 	m[-2] = k.X
 	m[-3] = k.Y
 	return em.Marshal(m)
+}
+
+type CurveInfo struct {
+	COSECurve cose.Curve
+	KeySize   int
+}
+
+var curveInfos = map[string]CurveInfo{
+	"P-256": {COSECurve: cose.CurveP256, KeySize: 32},
+	"P-384": {COSECurve: cose.CurveP384, KeySize: 48},
+	"P-521": {COSECurve: cose.CurveP521, KeySize: 66},
+}
+
+func curveName(c elliptic.Curve) string {
+	switch c {
+	case elliptic.P256():
+		return "P-256"
+	case elliptic.P384():
+		return "P-384"
+	case elliptic.P521():
+		return "P-521"
+	default:
+		return "unknown"
+	}
+}
+
+// paddedBytes returns fixed-length bytes from big.Int
+func paddedBytes(n *big.Int, size int) ([]byte, error) {
+	b := n.Bytes()
+	if len(b) > size {
+		return nil, fmt.Errorf("integer too large for field size")
+	}
+	padded := make([]byte, size)
+	copy(padded[size-len(b):], b) // Zero-pad on the left (right-aligned)
+	return padded, nil
 }
