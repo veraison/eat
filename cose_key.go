@@ -40,6 +40,49 @@ type COSEKey struct {
 	D   []byte     `cbor:"-4,keyasint,omitempty" json:"d,omitempty"`
 }
 
+func NewKeyFromPublic(pub crypto.PublicKey) (*COSEKey, error) {
+	var key COSEKey
+	switch vk := pub.(type) {
+	case *ecdsa.PublicKey:
+		err := key.FromECDSAPublicKey(vk)
+		if err != nil {
+			return nil, err
+		}
+		return &key, nil
+	case ed25519.PublicKey:
+		err := key.FromEd25519PublicKey(vk)
+		if err != nil {
+			return nil, err
+		}
+		return &key, nil
+	default:
+		return nil, fmt.Errorf("invalid key type: %v", pub)
+	}
+}
+
+func NewKeyFromPrivate(priv crypto.PrivateKey) (*COSEKey, error) {
+	var key COSEKey
+	switch vk := priv.(type) {
+	case *ecdsa.PrivateKey:
+		err := key.FromECDSAPrivateKey(vk)
+		if err != nil {
+			return nil, err
+		}
+		return &key, nil
+	case ed25519.PrivateKey:
+		if len(vk) != 64 {
+			return nil, fmt.Errorf("invalid length of private key: %d", len(vk))
+		}
+		err := key.FromEd25519KeyPair(vk[:32], ed25519.PublicKey(vk[32:]))
+		if err != nil {
+			return nil, err
+		}
+		return &key, nil
+	default:
+		return nil, fmt.Errorf("invalid key type: %v", priv)
+	}
+}
+
 type thumbprintHandler func() ([]byte, error)
 
 type CurveInfo struct {
