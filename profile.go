@@ -83,12 +83,12 @@ func constructASN1fromVal(val []byte) ([]byte, error) {
 	asn1OID := OID[:2]
 	asn1OID[0] = asn1AbsolueOIDType
 	if len(val) < 127 {
-		asn1OID[1] = byte(len(val))
+		asn1OID[1] = byte(len(val)) // nolint:gosec
 	} else if len(val) <= MaxASN1OIDLen {
 		// extra one byte is sufficient
 		asn1OID[1] = 1 // Set to 1 to indicate one more byte carries the length
 		asn1OID[1] |= asn1LongLenMask
-		asn1OID = append(asn1OID, byte(len(val)))
+		asn1OID = append(asn1OID, byte(len(val))) // nolint:gosec
 	} else {
 		return nil, fmt.Errorf("OIDs greater than %d bytes are not accepted", MaxASN1OIDLen)
 	}
