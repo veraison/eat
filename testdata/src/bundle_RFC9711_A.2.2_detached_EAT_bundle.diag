@@ -1,0 +1,50 @@
+/ This is a detached EAT bundle tag. /
+/ NOTE: the ueid (key 256) value in the original examples is /
+/       h'0198f50a4ff6c05861c8860d13a638ea', however this is /
+/       only 16 bytes, incuding the type byte. The text of   /
+/       the spec and CDDL both suggest that the type byte    /
+/       should not be counted as part of the specified value./
+/       Therefore the value is padded to be 17 bytes.        /
+
+602([
+
+    / The first part is a full EAT token with claims like nonce /
+    / and UEID. Most importantly, it includes a submodule that  /
+    / is a detached digest, which is the hash of the "TEE"      /
+    / claims set in the next part of the detached EAT bundle.   /
+    / The COSE payload is as follows:                           /
+    / { /
+    /      10: h'948F8860D13A463E', /
+    /     256: h'0198F50A4FF6C05861C8860D13A638EA00', /
+    /     258: 64242, /
+    /     262: true, /
+    /     263: 3, /
+    /     260: ["3.1", 1], /
+    /     266: { /
+    /         "TEE": [ /
+    /             -16, /
+    /              h'ab86f765643aabfd09c84eebe150b7f6  /
+    /                1bc24804cee75e90c5f99cb850fe808f' /
+    /         ] /
+    /     } /
+    /   }  /
+    h'D83DD28443A10126A05867A80A48948F8860D13A463E1901
+      00510198F50A4FF6C05861C8860D13A638EA0019010219FA
+      F219010504190106F5190107031901048263332E31011901
+      0AA163544545822F58208DEF652F47000710D9F466A4C666
+      E209DD74F927A1CEA352B03143E188838ABE5840F690CB03
+      88677FA624A3775FD7CBC4E8409EC9816BE32FA474733B0F
+      98C27FBAEDBBC9963B9CB5ECC03C3E35B3AFC0B7B35B495D
+      EAC0997122EA867F07B8D5EB',
+    {
+       / A CBOR-encoded byte-string-wrapped EAT claims-set. /
+       / It contains claims for a simple TEE attestation.   /
+       "TEE" : h'a40a5048df7b172d70b5a18935d0460a73dd7119
+                 0106f51901070219011081821901025858a60064
+                 336132340c01016b41636d6520544545204f530d
+                 65332e312e340282a2181f6b41636d6520544545
+                 204f53182101a2181f6b41636d6520544545204f
+                 5318210206a111a118186e61636d655f7465655f
+                 332e657865'
+    }
+ ])

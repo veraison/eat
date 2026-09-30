@@ -1,4 +1,4 @@
-// Copyright 2020 Contributors to the Veraison project.
+// Copyright 2020-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package eat
@@ -7,207 +7,182 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestSubmods_Add_OK(t *testing.T) {
-	var s Submods
-
-	emptyEatToken := []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}
-
-	err := s.Add("eat-claims", Eat{})
-	assert.Nil(t, err)
-
-	err = s.Add("eat-token", emptyEatToken)
-	assert.Nil(t, err)
-
-	assert.Equal(t, Eat{}, s.Get("eat-claims"))
-	assert.Equal(t, emptyEatToken, s.Get("eat-token"))
-}
-
-func TestSubmods_Add_FAIL(t *testing.T) {
-	var s Submods
-
-	justTagsNoEatToken := []byte{0xd8, 0x3d, 0xd2}
-
-	err := s.Add("eat-token", justTagsNoEatToken)
-	assert.EqualError(t, err, "not enough bytes")
-
-	noTagsJustRandomStuff := []byte{0x00, 0x01, 0x02, 0x03, 0x04}
-
-	err = s.Add("eat-token", noTagsJustRandomStuff)
-	assert.EqualError(t, err, "CWT and COSE Sign1 tags not found")
-
-	badSubmodType := 12.34
-
-	err = s.Add("eat-token", badSubmodType)
-	assert.EqualError(t, err, "submod must be Eat or []byte")
-}
-
-func TestSubmods_JSONMarshal_Simple(t *testing.T) {
-	var s Submods
-
-	require.Nil(t, s.Add("0", Eat{Nonce: &Nonce{nonce{nonceBytes}}}))
-	require.Nil(t, s.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
-
-	expected := `{
-		"0": {
-			"eat_nonce": "AAAAAAAAAAA="
+func TestSubmod_round_trip(t *testing.T) {
+	testCases := []struct {
+		title        string
+		submod       Submod
+		expectedCBOR []byte
+		expectedJSON string
+	}{
+		{
+			title: "ok nested token",
+			submod: Submod{&NestedToken{
+				Type: NestedTokenDigest,
+				Data: []byte(`[-16,"3q2-7w"]`),
+			}},
+			expectedCBOR: []byte{
+				0x6e,                                           // tstr(14)
+				0x5b, 0x2d, 0x31, 0x36, 0x2c, 0x22, 0x33, 0x71, // . "[-16,\"3q"
+				0x32, 0x2d, 0x37, 0x77, 0x22, 0x5d, //             . "2-7w\"]"
+			},
+			expectedJSON: `["DIGEST",[-16,"3q2-7w"]]`,
 		},
-		"xyz": "2D3SQaA="
-	}`
-
-	actual, err := json.Marshal(s)
-	assert.Nil(t, err)
-	assert.JSONEq(t, expected, string(actual))
-}
-
-func TestSubmods_JSONMarshal_Nested(t *testing.T) {
-	var inner Submods
-	require.Nil(t, inner.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
-
-	eat := Eat{Submods: &inner}
-
-	var outer Submods
-	require.Nil(t, outer.Add("0", eat))
-
-	expected := `{
-		"0": {
-			"submods": {
-				"xyz": "2D3SQaA="
-			}
-		}
-	}`
-
-	actual, err := json.Marshal(outer)
-	assert.Nil(t, err)
-	assert.JSONEq(t, expected, string(actual))
-}
-
-func TestSubmods_JSONUnmarshal_Simple(t *testing.T) {
-	tv := []byte(`{
-		"0": {
-			"eat_nonce": "AAAAAAAAAAA="
+		{
+			title: "ok claims set",
+			submod: Submod{&ClaimsSet{
+				BootCount:     Ptr(uint(1)),
+				privateClaims: make(map[IntOrString]any),
+			}},
+			expectedCBOR: []byte{
+				0xa1,             //             map(1)
+				0x19, 0x01, 0x0b, // . key: 267
+				0x01, //             . value: 1
+			},
+			expectedJSON: `{"bootcount":1}`,
 		},
-		"xyz": "2D3SQaA="
-	}`)
+		{
+			title:  "ok detached submod digest",
+			submod: Submod{MustNewDetachedSubmodDigestIntAlg(Sha256, testDigestBytes)},
+			expectedCBOR: []byte{
+				0x82,       // array(2)
+				0x2f,       // . [0]-16 [sha-256]
+				0x58, 0x20, // . [1]bstr(32)
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+			},
+			expectedJSON: `["DIGEST",[-16, "AAECAwQFBgcAAQIDBAUGBwABAgMEBQYHAAECAwQFBgc"]]`,
+		},
+	}
 
-	var s Submods
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			encodedCBOR, err := tc.submod.MarshalCBOR()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedCBOR, encodedCBOR)
 
-	err := json.Unmarshal(tv, &s)
-	assert.Nil(t, err)
+			var decodedSubmod Submod
+			err = decodedSubmod.UnmarshalCBOR(encodedCBOR)
+			assert.NoError(t, err)
+			assert.EqualValues(t, tc.submod, decodedSubmod)
 
-	assert.Equal(t, Eat{Nonce: &Nonce{nonce{nonceBytes}}}, s.Get("0"))
-	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
-}
+			encodedJSON, err := tc.submod.MarshalJSON()
+			assert.NoError(t, err)
+			assert.JSONEq(t, tc.expectedJSON, string(encodedJSON))
 
-func TestSubmods_JSONUnmarshal_Nested(t *testing.T) {
-	tv := []byte(`{
-		"0": {
-			"submods": {
-				"xyz": "2D3SQaA="
+			err = decodedSubmod.UnmarshalJSON(encodedJSON)
+			assert.NoError(t, err)
+
+			if tc.title == "ok detached submod digest" {
+				// As JSON submod encoding does not allow a detanched submod digest,
+				// it gets wrapped in a nested token.
+				expectedSubmod := Submod{&NestedToken{
+					Type: NestedTokenDigest,
+					Data: []byte(`[-16,"AAECAwQFBgcAAQIDBAUGBwABAgMEBQYHAAECAwQFBgc"]`),
+				}}
+				assert.EqualValues(t, expectedSubmod, decodedSubmod)
+			} else {
+				assert.EqualValues(t, tc.submod, decodedSubmod)
 			}
-		}
-	}`)
-
-	var outer Submods
-
-	err := json.Unmarshal(tv, &outer)
-	assert.Nil(t, err)
-
-	var inner Submods
-	require.Nil(t, inner.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
-
-	assert.Equal(t, Eat{Submods: &inner}, outer.Get("0"))
+		})
+	}
 }
 
-func TestSubmods_CBORMarshal_Simple(t *testing.T) {
-	var s Submods
+func TestSubmods_add_get(t *testing.T) {
+	submods := NewSubmods().
+		AddClaimsSet("foo", &ClaimsSet{
+			BootCount:     Ptr(uint(1)),
+			privateClaims: make(map[IntOrString]any),
+		}).
+		AddDigest("bar", MustNewDetachedSubmodDigestIntAlg(Sha256, testDigestBytes)).
+		AddNestedToken("qux", &NestedToken{
+			Type: NestedTokenDigest,
+			Data: []byte(`[-16,"3q2-7w"]`),
+		})
 
-	require.Nil(t, s.Add("0", Eat{Nonce: &Nonce{nonce{nonceBytes}}}))
-	require.Nil(t, s.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
+	claimsSet, err := submods.GetClaimsSet("foo")
+	assert.NoError(t, err)
+	assert.EqualValues(t, Ptr(uint(1)), claimsSet.BootCount)
 
-	// echo "{\"0\": {10: h'0000000000000000'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
-	expected := []byte{
-		0xa2, 0x61, 0x30, 0xa1, 0x0a, 0x48, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x63, 0x78, 0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2,
-		0x41, 0xa0,
-	}
+	_, err = submods.GetClaimsSet("bar")
+	assert.ErrorContains(t, err, `submod "bar" is not a claims set`)
 
-	actual, err := em.Marshal(s)
-	assert.Nil(t, err)
-	assert.Equal(t, expected, actual)
+	_, err = submods.GetClaimsSet("zot")
+	assert.ErrorContains(t, err, `no submod named "zot"`)
+
+	digest, err := submods.GetDigest("bar")
+	assert.NoError(t, err)
+	assert.EqualValues(t, HashAlgorithmSha256, digest.Algorithm)
+
+	_, err = submods.GetDigest("foo")
+	assert.ErrorContains(t, err, `submod "foo" is not a detached submod digest`)
+
+	_, err = submods.GetDigest("zot")
+	assert.ErrorContains(t, err, `no submod named "zot"`)
+
+	token, err := submods.GetNestedToken("qux")
+	assert.NoError(t, err)
+	assert.EqualValues(t, NestedTokenDigest, token.Type)
+
+	_, err = submods.GetNestedToken("foo")
+	assert.ErrorContains(t, err, `submod "foo" is not a nested token`)
+
+	_, err = submods.GetNestedToken("zot")
+	assert.ErrorContains(t, err, `no submod named "zot"`)
+
+	assert.Panics(t, func() { submods.AddClaimsSet("zot", nil) })
+	assert.Panics(t, func() { submods.AddDigest("zot", nil) })
+	assert.Panics(t, func() { submods.AddNestedToken("zot", nil) })
 }
 
-func TestSubmods_CBORMarshal_Nested(t *testing.T) {
-	var inner Submods
-	require.Nil(t, inner.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
-
-	eat := Eat{Submods: &inner}
-
-	var outer Submods
-	require.Nil(t, outer.Add("0", eat))
-
-	// echo "{\"0\": {266: {\"xyz\": h'd83dd241a0'}}}" | diag2cbor.rb | xxd -i
-	expected := []byte{
-		0xa1, 0x61, 0x30, 0xa1, 0x19, 0x01, 0x0a, 0xa1, 0x63, 0x78, 0x79, 0x7a,
-		0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
+func TestSubmods_round_trip(t *testing.T) {
+	testCases := []struct {
+		title        string
+		submods      Submods
+		expectedCBOR []byte
+		expectedJSON string
+	}{
+		{
+			title: "ok claims set",
+			submods: *NewSubmods().AddClaimsSet("foo", &ClaimsSet{
+				BootCount:     Ptr(uint(1)),
+				privateClaims: make(map[IntOrString]any),
+			}),
+			expectedCBOR: []byte{
+				0xa1,             // map(1)
+				0x63,             // . key: tstr(3)
+				0x66, 0x6f, 0x6f, // . . "foo"
+				0xa1,             // . value: map(1) [ClaimSet]
+				0x19, 0x01, 0x0b, // . . key: 267
+				0x01, //             . . value: 1
+			},
+			expectedJSON: `{"foo": {"bootcount":1}}`,
+		},
 	}
 
-	actual, err := em.Marshal(outer)
-	assert.Nil(t, err)
-	assert.Equal(t, expected, actual)
-}
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			encodedCBOR, err := cbor.Marshal(tc.submods)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedCBOR, encodedCBOR)
 
-func TestSubmods_CBORUnmarshal_Simple(t *testing.T) {
-	// echo "{\"0\": {10: h'0000000000000000'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
-	tv := []byte{
-		0xa2, 0x61, 0x30, 0xa1, 0x0a, 0x48, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x63, 0x78, 0x79, 0x7a, 0x45, 0xd8, 0x3d, 0xd2,
-		0x41, 0xa0,
+			var decodedSubmods Submods
+			err = cbor.Unmarshal(encodedCBOR, &decodedSubmods)
+			assert.NoError(t, err)
+			assert.EqualValues(t, tc.submods, decodedSubmods)
+
+			encodedJSON, err := json.Marshal(tc.submods)
+			assert.NoError(t, err)
+			assert.JSONEq(t, tc.expectedJSON, string(encodedJSON))
+
+			err = json.Unmarshal(encodedJSON, &decodedSubmods)
+			assert.NoError(t, err)
+			assert.EqualValues(t, tc.submods, decodedSubmods)
+		})
 	}
-
-	var s Submods
-
-	err := dm.Unmarshal(tv, &s)
-	assert.Nil(t, err)
-
-	assert.Equal(t, Eat{Nonce: &Nonce{nonce{nonceBytes}}}, s.Get("0"))
-	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
-}
-
-func TestSubmods_CBORUnmarshal_SimpleWithNegativeKey(t *testing.T) {
-	// echo "{\"-1\": {10: h'0000000000000000'}, \"xyz\": h'd83dd241a0'}" | diag2cbor.rb | xxd -i
-	tv := []byte{
-		0xa2, 0x62, 0x2d, 0x31, 0xa1, 0x0a, 0x48, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x63, 0x78, 0x79, 0x7a, 0x45, 0xd8, 0x3d,
-		0xd2, 0x41, 0xa0,
-	}
-
-	var s Submods
-
-	err := dm.Unmarshal(tv, &s)
-	assert.Nil(t, err)
-
-	assert.Equal(t, Eat{Nonce: &Nonce{nonce{nonceBytes}}}, s.Get("-1"))
-	assert.Equal(t, []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}, s.Get("xyz"))
-}
-
-func TestSubmods_CBORUnmarshal_Nested(t *testing.T) {
-	// echo "{ \"0\": { 266: { \"xyz\": h'd83dd241a0' } } }" | diag2cbor.rb | xxd -i
-	tv := []byte{
-		0xa1, 0x61, 0x30, 0xa1, 0x19, 0x01, 0x0a, 0xa1, 0x63, 0x78, 0x79, 0x7a,
-		0x45, 0xd8, 0x3d, 0xd2, 0x41, 0xa0,
-	}
-
-	var outer Submods
-
-	err := dm.Unmarshal(tv, &outer)
-	assert.Nil(t, err)
-
-	var inner Submods
-	require.Nil(t, inner.Add("xyz", []byte{0xd8, 0x3d, 0xd2, 0x41, 0xa0}))
-
-	assert.Equal(t, Eat{Submods: &inner}, outer.Get("0"))
 }

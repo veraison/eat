@@ -1,4 +1,4 @@
-// Copyright 2020 Contributors to the Veraison project.
+// Copyright 2020-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package eat
@@ -19,7 +19,7 @@ func TestNonce_Add_ok(t *testing.T) {
 
 		err := nonces.Add(tv)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	}
 }
 
@@ -58,7 +58,7 @@ func TestNonce_AddHex_ok(t *testing.T) {
 
 	err := nonces.AddHex("deadbeefbeefdead")
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestNonce_AddHex_bad_hex(t *testing.T) {
@@ -84,7 +84,7 @@ func TestNonce_MarshalCBOR_single_ok(t *testing.T) {
 	}
 
 	actual, err := nonces.MarshalCBOR()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
@@ -111,7 +111,7 @@ func TestNonce_MarshalCBOR_multiple_ok(t *testing.T) {
 	expected = append(expected, tv[1]...)
 
 	actual, err := nonces.MarshalCBOR()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
@@ -120,8 +120,7 @@ func TestNonce_MarshalCBOR_empty(t *testing.T) {
 
 	_, err := nonces.MarshalCBOR()
 
-	expected := "CBOR encoding failed: "
-	expected += "empty nonce"
+	expected := "empty nonce"
 
 	assert.EqualError(t, err, expected)
 }
@@ -136,9 +135,9 @@ func TestNonce_UnmarshalCBOR_single_ok(t *testing.T) {
 	actual := Nonce{}
 	err := actual.UnmarshalCBOR(data)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, actual.Len())
-	assert.Equal(t, expected, actual.GetI(0))
+	assert.Equal(t, expected, actual.Get(0))
 }
 
 func TestNonce_UnmarshalCBOR_multiple_ok(t *testing.T) {
@@ -161,10 +160,10 @@ func TestNonce_UnmarshalCBOR_multiple_ok(t *testing.T) {
 	actual := Nonce{}
 	err := actual.UnmarshalCBOR(data)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 2, actual.Len())
-	assert.Equal(t, expected[0], actual.GetI(0))
-	assert.Equal(t, expected[1], actual.GetI(1))
+	assert.Equal(t, expected[0], actual.Get(0))
+	assert.Equal(t, expected[1], actual.Get(1))
 }
 
 func TestNonce_UnmarshalCBOR_bad_cbor(t *testing.T) {
@@ -183,17 +182,8 @@ func TestNonce_Validate_ok(t *testing.T) {
 	data := []byte{0x48, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef}
 
 	actual := Nonce{}
-	require.Nil(t, actual.UnmarshalCBOR(data))
-
-	err := actual.Validate()
-	assert.Nil(t, err)
-}
-
-func TestNonce_Validate_empty(t *testing.T) {
-	empty := Nonce{}
-
-	err := empty.Validate()
-	assert.EqualError(t, err, "empty nonce")
+	err := actual.UnmarshalCBOR(data)
+	assert.NoError(t, err)
 }
 
 func TestNonce_Validate_too_short(t *testing.T) {
@@ -201,12 +191,11 @@ func TestNonce_Validate_too_short(t *testing.T) {
 	data := []byte{0x47, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe}
 
 	actual := Nonce{}
-	require.Nil(t, actual.UnmarshalCBOR(data))
+	err := actual.UnmarshalCBOR(data)
 
 	expected := "found invalid nonce at index 0: "
 	expected += "a nonce must be between 8 and 64 bytes long; found 7"
 
-	err := actual.Validate()
 	assert.EqualError(t, err, expected)
 }
 
@@ -223,12 +212,11 @@ func TestNonce_Validate_too_long(t *testing.T) {
 	}
 
 	actual := Nonce{}
-	require.Nil(t, actual.UnmarshalCBOR(data))
+	err := actual.UnmarshalCBOR(data)
 
 	expected := "found invalid nonce at index 0: "
 	expected += "a nonce must be between 8 and 64 bytes long; found 65"
 
-	err := actual.Validate()
 	assert.EqualError(t, err, expected)
 }
 
@@ -241,13 +229,13 @@ func TestNonce_UnmarshalCBOR_repeatedly(t *testing.T) {
 	actual := Nonce{}
 
 	err := actual.UnmarshalCBOR(data1)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// the second decode on the same Nonce clobbers the first
 	err = actual.UnmarshalCBOR(data2)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, actual.Len())
-	assert.Equal(t, expected, actual.GetI(0))
+	assert.Equal(t, expected, actual.Get(0))
 }
 
 func TestNonce_MarshalJSON_single_ok(t *testing.T) {
@@ -258,11 +246,11 @@ func TestNonce_MarshalJSON_single_ok(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	expected := []byte(`"3q2+796tvu8="`)
+	expected := []byte(`"3q2-796tvu8"`)
 
 	actual, err := nonces.MarshalJSON()
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
@@ -278,17 +266,17 @@ func TestNonce_MarshalJSON_multiple_ok(t *testing.T) {
 	}
 
 	expected := `[
-		"AAAAAAAAAAA=",
-		"AQEBAQEBAQE="
+		"AAAAAAAAAAA",
+		"AQEBAQEBAQE"
 	]`
 
 	actual, err := nonces.MarshalJSON()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.JSONEq(t, expected, string(actual))
 }
 
 func TestNonce_UnmarshalJSON_single_ok(t *testing.T) {
-	tv := []byte(`"3q2+796tvu8="`)
+	tv := []byte(`"3q2-796tvu8"`)
 
 	expected := []byte{
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
@@ -297,9 +285,9 @@ func TestNonce_UnmarshalJSON_single_ok(t *testing.T) {
 	actual := Nonce{}
 	err := actual.UnmarshalJSON(tv)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, actual.Len())
-	assert.Equal(t, expected, actual.GetI(0))
+	assert.Equal(t, expected, actual.Get(0))
 }
 
 func TestNonce_MarshalJSON_empty(t *testing.T) {
@@ -307,8 +295,7 @@ func TestNonce_MarshalJSON_empty(t *testing.T) {
 
 	_, err := nonces.MarshalJSON()
 
-	expected := "JSON encoding failed: "
-	expected += "empty nonce"
+	expected := "empty nonce"
 
 	assert.EqualError(t, err, expected)
 }
@@ -341,15 +328,15 @@ func TestNonce_UnmarshalJSON_not_a_string(t *testing.T) {
 	tv := []byte(`{ "a": 1 }`)
 
 	expected := "JSON decoding failed for nonce: "
-	expected += "invalid nonce input map[string]interface {}"
+	expected += "json: cannot unmarshal object into Go value of type string"
 
 	actual := Nonce{}
 	err := actual.UnmarshalJSON(tv)
 
-	assert.EqualError(t, err, expected)
+	assert.ErrorContains(t, err, expected)
 }
 
-func TestNonce_GetI_ok(t *testing.T) {
+func TestNonce_Get_ok(t *testing.T) {
 	tv := [][]byte{
 		{0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef},
 		{0xab, 0xad, 0xca, 0xfe, 0xab, 0xad, 0xca, 0xfe},
@@ -361,23 +348,23 @@ func TestNonce_GetI_ok(t *testing.T) {
 	}
 
 	for i := range tv {
-		assert.Equal(t, tv[i], nonces.GetI(i))
+		assert.Equal(t, tv[i], nonces.Get(i))
 	}
 }
 
-func TestNonce_GetI_out_of_bounds(t *testing.T) {
+func TestNonce_Get_out_of_bounds(t *testing.T) {
 	tv := Nonce{}
 
 	for i := -10; i < 10; i++ {
-		actual := tv.GetI(i)
+		actual := tv.Get(i)
 		assert.Nil(t, actual)
 	}
 }
 
 func TestNonce_UnmarshalJSON_two_entries_ok(t *testing.T) {
 	tv := []byte(`[
-		"AAAAAAAAAAA=",
-		"AQEBAQEBAQE="
+		"AAAAAAAAAAA",
+		"AQEBAQEBAQE"
 	]`)
 
 	actual := Nonce{}
@@ -388,8 +375,8 @@ func TestNonce_UnmarshalJSON_two_entries_ok(t *testing.T) {
 		{0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01},
 	}
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	for i := range expected {
-		assert.Equal(t, expected[i], actual.GetI(i))
+		assert.Equal(t, expected[i], actual.Get(i))
 	}
 }

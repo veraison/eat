@@ -1,4 +1,4 @@
-// Copyright 2020 Contributors to the Veraison project.
+// Copyright 2020-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package eat
@@ -9,55 +9,55 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUEID_Verify(t *testing.T) {
-	u0 := UEID{}
-	assert.EqualError(t, u0.Validate(), "empty UEID")
+func Test_UEIDFromBytes(t *testing.T) {
+	_, err := UEIDFromBytes([]byte{})
+	assert.EqualError(t, err, "empty UEID")
 
-	u1 := UEID{
+	_, err = UEIDFromBytes([]byte{
 		0x01, // RAND
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, // 16 bytes
-	}
-	assert.Nil(t, u1.Validate())
+	})
+	assert.NoError(t, err)
 
-	u2 := UEID{
+	_, err = UEIDFromBytes([]byte{
 		0x01, // RAND
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, // 15 bytes
-	}
-	assert.EqualError(t, u2.Validate(), "RAND length must be exactly 16, 24, or 32 bytes; found 15 bytes")
+	})
+	assert.EqualError(t, err, "RAND length must be exactly 16, 24, or 32 bytes; found 15 bytes")
 
-	u3 := UEID{
+	_, err = UEIDFromBytes([]byte{
 		0x02,                               // EUI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, // 6 bytes
-	}
-	assert.Nil(t, u3.Validate())
+	})
+	assert.NoError(t, err)
 
-	u4 := UEID{
+	_, err = UEIDFromBytes([]byte{
 		0x02, // EUI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, // 15 bytes
-	}
-	assert.EqualError(t, u4.Validate(), "EUI length must be exactly 6 (EUI-48) or 8 (EUI-60 or EUI-64) bytes; found 15 bytes")
+	})
+	assert.EqualError(t, err, "EUI length must be exactly 6 (EUI-48) or 8 (EUI-60 or EUI-64) bytes; found 15 bytes")
 
-	u5 := UEID{
+	_, err = UEIDFromBytes([]byte{
 		0x03, // IMEI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, // 14 bytes
-	}
-	assert.Nil(t, u5.Validate())
+	})
+	assert.NoError(t, err)
 
-	u6 := UEID{
+	_, err = UEIDFromBytes([]byte{
 		0x03, // IMEI
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, // 15 bytes
-	}
-	assert.EqualError(t, u6.Validate(), "IMEI length must be exactly 14 bytes; found 15 bytes")
+	})
+	assert.EqualError(t, err, "IMEI length must be exactly 14 bytes; found 15 bytes")
 
-	u7 := UEID{
+	_, err = UEIDFromBytes([]byte{
 		0xFF, // Invalid
 		0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
-	}
-	assert.EqualError(t, u7.Validate(), "invalid UEID type 255")
+	})
+	assert.EqualError(t, err, "invalid UEID type 255")
 
 }

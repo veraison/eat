@@ -5,7 +5,7 @@ package eat
 
 import "fmt"
 
-func ExampleEat_ToJSON() {
+func ExampleEat_MarshalJSON() {
 	nonce := Nonce{}
 
 	if err := nonce.AddHex("0000000000000000"); err != nil {
@@ -15,34 +15,32 @@ func ExampleEat_ToJSON() {
 	// if required by the use case, add more nonces
 
 	t := Eat{
-		Nonce: &nonce,
+		ClaimsSet{
+			Nonce: &nonce,
+		},
 	}
 
-	j, err := t.ToJSON()
+	j, err := t.MarshalJSON()
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println(string(j))
 
-	// Output: {"eat_nonce":"AAAAAAAAAAA="}
+	// Output: {"eat_nonce":"AAAAAAAAAAA"}
 }
 
-func ExampleEat_FromJSON() {
+func ExampleEat_UnmarshalJSON() {
 	t := Eat{}
 
-	data := []byte(`{"eat_nonce":"AAAAAAAAAAA="}`)
+	data := []byte(`{"eat_nonce":"AAAAAAAAAAA"}`)
 
-	if err := t.FromJSON(data); err != nil {
+	if err := t.UnmarshalJSON(data); err != nil {
 		panic(err)
 	}
 
-	if err := t.Nonce.Validate(); err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("nonces found: %d\n", t.Nonce.Len())
-	fmt.Printf("nonce: %x\n", t.Nonce.GetI(0))
+	fmt.Printf("nonces found: %d\n", t.Claims().Nonce.Len())
+	fmt.Printf("nonce: %x\n", t.Claims().Nonce.Get(0))
 
 	// Output:
 	// nonces found: 1

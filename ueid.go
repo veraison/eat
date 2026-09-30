@@ -1,9 +1,12 @@
-// Copyright 2020 Contributors to the Veraison project.
+// Copyright 2020-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package eat
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	UEIDTypeInvalid = iota
@@ -35,16 +38,72 @@ const (
 	UEIDTypeIMEI
 )
 
-// ueid-type = bstr .size (7..33)
-type UEID []byte
+func MustUEIDFromBytes(value []byte) *UEID {
+	ret, err := UEIDFromBytes(value)
+	if err != nil {
+		panic(err)
+	}
 
-func (u UEID) Validate() error {
-	if len(u) == 0 {
+	return ret
+}
+
+func UEIDFromBytes(value []byte) (*UEID, error) {
+	if err := validateUEIDBytes(value); err != nil {
+		return nil, err
+	}
+
+	return &UEID{value}, nil
+}
+
+type UEID struct {
+	value BinaryData
+}
+
+func (o *UEID) MarshalCBOR() ([]byte, error) {
+	return em.Marshal(o.value)
+}
+
+func (o *UEID) UnmarshalCBOR(data []byte) error {
+	var value BinaryData
+	if err := dm.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	if err := validateUEIDBytes(value); err != nil {
+		return err
+	}
+
+	o.value = value
+
+	return nil
+}
+
+func (o *UEID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.value)
+}
+
+func (o *UEID) UnmarshalJSON(data []byte) error {
+	var value BinaryData
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	if err := validateUEIDBytes(value); err != nil {
+		return err
+	}
+
+	o.value = value
+
+	return nil
+}
+
+func validateUEIDBytes(data []byte) error {
+	if len(data) == 0 {
 		return fmt.Errorf("empty UEID")
 	}
 
-	typ := u[0]
-	value := u[1:]
+	typ := data[0]
+	value := data[1:]
 
 	switch typ {
 	case UEIDTypeRAND:

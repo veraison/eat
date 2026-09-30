@@ -1,139 +1,221 @@
-// Copyright 2020 Contributors to the Veraison project.
+// Copyright 2020-2026 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
 package eat
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 )
 
 // Submod is the type of a submod: either a raw EAT (wrapped in a Sign1 CWT), or
 // a map of EAT claims
-type Submod struct{ value interface{} }
-
-// MarshalJSON encodes the submod value wrapped in the Submod receiver to JSON
-func (s Submod) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.value)
+type Submod struct {
+	value any
 }
 
-// MarshalCBOR encodes the submod value wrapped in the Submod receiver to CBOR
-func (s Submod) MarshalCBOR() ([]byte, error) {
-	return em.Marshal(s.value)
+func (o *Submod) MarshalCBOR() ([]byte, error) {
+	return em.Marshal(o.value)
 }
 
-// UnmarshalJSON attempts to decode the supplied JSON data into the Submod
-// receiver, peeking into the stream to choose between one of the two target
-// formats (i.e., eat-token or eat-claims)
-func (s *Submod) UnmarshalJSON(data []byte) error {
-	if data[0] == '{' { // eat-claims
-		var eatClaims Eat
-
-		if err := eatClaims.FromJSON(data); err != nil {
-			return err
-		}
-		s.value = eatClaims
-
-		return nil
+func (o *Submod) UnmarshalCBOR(data []byte) error {
+	if len(data) == 0 {
+		return errors.New("buffer too short")
 	}
 
-	// eat-token
-	b64 := string(data[1 : len(data)-1]) // remove quotes
-
-	eatToken, err := base64.StdEncoding.DecodeString(b64)
-	if err != nil {
-		return err
-	}
-
-	if err := s.setEatToken(eatToken); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Submod) setEatToken(data []byte) error {
-	if err := checkTags(data); err != nil {
-		return err
-	}
-
-	s.value = data
-
-	return nil
-}
-
-// UnmarshalCBOR attempts to decode the supplied CBOR data into the Submod
-// receiver, peeking into the stream to choose between one of the two target
-// formats (i.e., eat-token or eat-claims)
-func (s *Submod) UnmarshalCBOR(data []byte) error {
-	if isCBORByteString(data) {
-		var eatToken []byte
-
-		if err := dm.Unmarshal(data, &eatToken); err != nil {
+	majorType := (data[0] & 0xe0) >> 5
+	switch majorType {
+	case 2, 3:
+		// bstr or tstr -> CBOR-Nested-Token
+		var token NestedToken
+		if err := token.UnmarshalCBOR(data); err != nil {
 			return err
 		}
 
-		if err := s.setEatToken(eatToken); err != nil {
+		o.value = &token
+	case 4:
+		// array -> Detached-Submodule-Digest
+		var digest DetachedSubmodDigest
+		if err := dm.Unmarshal(data, &digest); err != nil {
 			return err
 		}
 
-		return nil
-	}
-
-	var eatClaims Eat
-	if err := eatClaims.FromCBOR(data); err != nil {
-		return err
-	}
-
-	s.value = eatClaims
-
-	return nil
-}
-
-func checkTags(data []byte) error {
-	// d8 3d  # tag(61) -- CWT
-	// d2  # tag(18) -- Sign1
-	prefix := []byte{0xd8, 0x3d, 0xd2}
-
-	if len(data) < len(prefix)+1 {
-		return errors.New("not enough bytes")
-	}
-
-	if !bytes.HasPrefix(data, prefix) {
-		return errors.New("CWT and COSE Sign1 tags not found")
-	}
-
-	return nil
-}
-
-// Submods models the submods type
-type Submods map[string]Submod
-
-// Get retrieves a submod by name (either int64 or string)
-func (s Submods) Get(name string) interface{} {
-	return s[name].value
-}
-
-// Add inserts the named submod in the Submods container. The supplied name must
-// be of type string or int64
-func (s *Submods) Add(name string, submod interface{}) error {
-	switch t := submod.(type) {
-	case Eat: // OK as-is
-	case []byte: // make sure that the wrapping tags are in the right place
-		if err := checkTags(t); err != nil {
+		o.value = &digest
+	case 5:
+		// map -> Claims-Set
+		var claimsSet ClaimsSet
+		if err := claimsSet.UnmarshalCBOR(data); err != nil {
 			return err
 		}
+
+		o.value = &claimsSet
 	default:
-		return errors.New("submod must be Eat or []byte")
+		return fmt.Errorf("unexpected CBOR major type for submod: %d", majorType)
 	}
-
-	if *s == nil {
-		*s = make(Submods)
-	}
-
-	(*s)[name] = Submod{submod}
 
 	return nil
+}
+
+func (o *Submod) MarshalJSON() ([]byte, error) {
+	toMarshal := o.value
+
+	// JSON encoding does not allow a Submod to be a DetachedSubmodDigest, so we
+	// need to wrap it inside a NestedToken
+	if digest, ok := toMarshal.(*DetachedSubmodDigest); ok {
+		data, err := digest.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+
+		toMarshal = &NestedToken{
+			Type: NestedTokenDigest,
+			Data: data,
+		}
+	}
+
+	return json.Marshal(toMarshal)
+}
+
+func (o *Submod) UnmarshalJSON(data []byte) error {
+	text := strings.TrimSpace(string(data))
+
+	switch text[0] {
+	case '[':
+		// array -> JSON-Selector -> Nested-Token
+		var token NestedToken
+		if err := token.UnmarshalJSON(data); err != nil {
+			return err
+		}
+
+		o.value = &token
+	case '{':
+		// object -> Claims-Set
+		var claimsSet ClaimsSet
+		if err := claimsSet.UnmarshalJSON(data); err != nil {
+			return err
+		}
+
+		o.value = &claimsSet
+	default:
+		return fmt.Errorf("invalid JSON type (expected object or array): %q", text)
+	}
+
+	return nil
+}
+
+// Submods is a collection of named submodule claims. Each submodule is either
+// a ClaimsSet, a NestedToken, or a DetachedSubmodDigest.
+type Submods map[string]*Submod
+
+// NewSubmods returns a pointer to an empty Submods:
+func NewSubmods() *Submods {
+	ret := Submods(make(map[string]*Submod))
+	return &ret
+}
+
+// AddClaimsSet adds the provided *ClaimsSet to the Submods under the specified
+// name, overwritting any existing submod under that name. Pointer to the
+// Submods is returned to allow chaing with other adds. Panics if the provided
+// *ClaimsSet is nil.
+func (o *Submods) AddClaimsSet(name string, claimsSet *ClaimsSet) *Submods {
+	if claimsSet == nil {
+		panic("nil claims set")
+	}
+
+	(*o)[name] = &Submod{claimsSet}
+	return o
+}
+
+// AddDigest adds the provided *DetachedSubmodDigest to the Submods under the
+// specified name, overwritting any existing submod under that name. Pointer to
+// the Submods is returned to allow chaing with other adds. Panics if the
+// provided *DetachedSubmodDigest is nil or is invalid.
+func (o *Submods) AddDigest(name string, digest *DetachedSubmodDigest) *Submods {
+	if digest == nil {
+		panic("nil detached submod digest")
+	}
+
+	if err := digest.Validate(); err != nil {
+		panic(err)
+	}
+
+	(*o)[name] = &Submod{digest}
+	return o
+}
+
+// AddClaimsSet adds the provided *NestedToken to the Submods under the
+// specified name, overwritting any existing submod under that name. Pointer to
+// the Submods is returned to allow chaing with other adds. Panics if the
+// provided *NestedToken is nil.
+func (o *Submods) AddNestedToken(name string, token *NestedToken) *Submods {
+	if token == nil {
+		panic("nil nested token")
+	}
+
+	(*o)[name] = &Submod{token}
+	return o
+}
+
+// Get retrieves a submod's value by name. If name is not in the collection,
+// nil is returned.
+func (o Submods) Get(name string) any {
+	submod, ok := o[name]
+	if !ok {
+		return nil
+	}
+
+	return submod.value
+}
+
+// GetClaimsSet returns the *ClaimsSet associated with the provided name. If the
+// name is not in Submods or the associated submod is not a *ClaimsSet, an
+// error is returned.
+func (o Submods) GetClaimsSet(name string) (*ClaimsSet, error) {
+	value := o.Get(name)
+	if value == nil {
+		return nil, fmt.Errorf("no submod named %q", name)
+	}
+
+	claimsSet, ok := value.(*ClaimsSet)
+	if !ok {
+		return nil, fmt.Errorf("submod %q is not a claims set", name)
+	}
+
+	return claimsSet, nil
+}
+
+// GetDigest returns the *DetachedSubmodDigest associated with the provided
+// name. If the name is not in Submods or the associated submod is not a
+// *DetachedSubmodDigest, an error is returned.
+func (o Submods) GetDigest(name string) (*DetachedSubmodDigest, error) {
+	value := o.Get(name)
+	if value == nil {
+		return nil, fmt.Errorf("no submod named %q", name)
+	}
+
+	digest, ok := value.(*DetachedSubmodDigest)
+	if !ok {
+		return nil, fmt.Errorf("submod %q is not a detached submod digest", name)
+	}
+
+	return digest, nil
+}
+
+// GetNestedToken returns the *DetachedNestedToken associated with the provided
+// name. If the name is not in Submods or the associated submod is not a
+// *DetachedNestedToken, an error is returned.
+func (o Submods) GetNestedToken(name string) (*NestedToken, error) {
+	value := o.Get(name)
+	if value == nil {
+		return nil, fmt.Errorf("no submod named %q", name)
+	}
+
+	token, ok := value.(*NestedToken)
+	if !ok {
+		return nil, fmt.Errorf("submod %q is not a nested token", name)
+	}
+
+	return token, nil
 }

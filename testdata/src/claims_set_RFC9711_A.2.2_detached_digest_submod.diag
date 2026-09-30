@@ -1,0 +1,28 @@
+/ This example contains a submodule that is a detached digest, /
+/ which is the hash of a Claims-Set conveyed outside this      /
+/ token. It is also an example of a token from an attestation  /
+/ hardware block.                                              /
+
+{
+    / eat_nonce /       10: h'3515744961254b41a6cf9c02',
+    / NOTE: the ueid value in the original examples is           /
+    /       h'0198f50a4ff6c05861c8860d13a638ea', however this is /
+    /       only 16 bytes, incuding the type byte. The text of   /
+    /       the spec and CDDL both suggest that the type byte    /
+    /       should not be counted as part of the specified value./
+    /       Therefore the value is padded to be 17 bytes.        /
+    / ueid /           256: h'0198f50a4ff6c05861c8860d13a638ea00',
+    / oemid /          258: 64242, / Private Enterprise Number /
+    / oemboot /        262: true,
+    / dbgstat /        263: 3, / disabled-permanently /
+    / hwversion /      260: [ "3.1", 1 ], / multipartnumeric /
+    / submods/         266: {
+                                "TEE": [ / detached digest submod /
+                                           -16, / SHA-256 /
+                                           h'ab86f765643aabfd09c8
+                                             4eebe150b7f61bc24804
+                                             cee75e90c5f99cb850fe
+                                             808f'
+                                       ]
+                            }
+}

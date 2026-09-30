@@ -1,0 +1,21 @@
+/ This is an example of a token produced by a hardware block      /
+/ purposely built for attestation.  Only the nonce claim changes  /
+/ from one attestation to the next as the rest come from either   /
+/ the hardware directly or from one-time-programmable memory      /
+/ (e.g., a fuse). The entire encoded token is 47 bytes, 8 of      /
+/ which are the nonce and 16 of which are the UEID.               /
+
+{
+    / eat_nonce /       10: h'd79b964ddd5471c1393c8888',
+    / NOTE: the ueid value in the original examples is           /
+    /       h'0198f50a4ff6c05861c8860d13a638ea', however this is /
+    /       only 16 bytes, incuding the type byte. The text of   /
+    /       the spec and CDDL both suggest that the type byte    /
+    /       should not be counted as part of the specified value./
+    /       Therefore the value is padded to be 17 bytes.        /
+    / ueid /           256: h'0198f50a4ff6c05861c8860d13a638ea00',
+    / oemid /          258: 64242, / Private Enterprise Number /
+    / oemboot /        262: true,
+    / dbgstat /        263: 3, / disabled-permanently /
+    / hwversion /      260: [ "3.1", 1 ] / Type is multipartnumeric /
+}
