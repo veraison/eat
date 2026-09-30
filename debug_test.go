@@ -19,44 +19,43 @@ func TestDebug_Validate(t *testing.T) {
 	}{
 		{
 			"not-disabled",
-			DebugNotDisabled,
+			DebugEnabledValue,
 			nil,
 		},
 		{
 			"disabled",
-			DebugDisabled,
+			DebugDisabledValue,
 			nil,
 		},
 		{
 			"disabled-since-boot",
-			DebugDisabledSinceBoot,
+			DebugDisabledSinceBootValue,
 			nil,
 		},
 		{
 			"permanent-disable",
-			DebugPermanentDisable,
+			DebugPermanentDisableValue,
 			nil,
 		},
 		{
 			"full-permanent-disable",
-			DebugFullPermanentDisable,
+			DebugFullPermanentDisableValue,
 			nil,
 		},
 		{
 			"out of range value",
 			5,
-			errors.New("out of range value 5 for Debug type"),
+			errors.New("invalid Debug value: 5"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			d := Debug(test.tv)
-			err := d.Validate()
+			d, err := DebugFromUint(test.tv)
 			if test.expectedErr != nil {
 				assert.Equal(t, test.expectedErr, err)
 			} else {
-				assert.Equal(t, test.tv, uint(d))
+				assert.Equal(t, test.tv, d.Uint())
 			}
 		})
 	}
@@ -69,16 +68,16 @@ func TestDebug_Marshal(t *testing.T) {
 	}
 
 	tests := map[uint]Expected{
-		DebugNotDisabled:          {[]byte{0x00}, `0`},
-		DebugDisabled:             {[]byte{0x01}, `1`},
-		DebugDisabledSinceBoot:    {[]byte{0x02}, `2`},
-		DebugPermanentDisable:     {[]byte{0x03}, `3`},
-		DebugFullPermanentDisable: {[]byte{0x04}, `4`},
-		5:                         {[]byte{0x05}, `5`},
+		DebugEnabledValue:              {[]byte{0x00}, `"enabled"`},
+		DebugDisabledValue:             {[]byte{0x01}, `"disabled"`},
+		DebugDisabledSinceBootValue:    {[]byte{0x02}, `"disabled-since-boot"`},
+		DebugPermanentDisableValue:     {[]byte{0x03}, `"disabled-permanently"`},
+		DebugFullPermanentDisableValue: {[]byte{0x04}, `"disabled-fully-and-permanently"`},
 	}
 
 	for codepoint, expected := range tests {
-		d := Debug(codepoint)
+		d, err := DebugFromUint(codepoint)
+		assert.NoError(t, err)
 
 		actual, err := em.Marshal(d)
 		assert.Nil(t, err)

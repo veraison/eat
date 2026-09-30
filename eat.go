@@ -7,53 +7,31 @@ import (
 	"encoding/json"
 )
 
-// Eat is the internal representation of a EAT token
+// Eat is the internal representation of an Entity Attestation Token.
 type Eat struct {
-	Nonce *Nonce `cbor:"10,keyasint,omitempty" json:"eat_nonce,omitempty"`
-	UEID  *UEID  `cbor:"256,keyasint,omitempty" json:"ueid,omitempty"`
-	// TODO: support SUEIDs
-	// TODO: support oemid-pem = int type
-	OemID           *[]byte   `cbor:"258,keyasint,omitempty" json:"oemid,omitempty"`
-	HardwareModel   *[]byte   `cbor:"259,keyasint,omitempty" json:"hwmodel,omitempty"`
-	HardwareVersion *Version  `cbor:"260,keyasint,omitempty" json:"hwversion,omitempty"`
-	Uptime          *uint     `cbor:"261,keyasint,omitempty" json:"uptime,omitempty"`
-	OemBoot         *bool     `cbor:"262,keyasint,omitempty" json:"oemboot,omitempty"`
-	DebugStatus     *Debug    `cbor:"263,keyasint,omitempty" json:"dbgstat,omitempty"`
-	Location        *Location `cbor:"264,keyasint,omitempty" json:"location,omitempty"`
-	Profile         *Profile  `cbor:"265,keyasint,omitempty" json:"eat-profile,omitempty"`
-	Submods         *Submods  `cbor:"266,keyasint,omitempty" json:"submods,omitempty"`
-	BootCount       *uint     `cbor:"267,keyasint,omitempty" json:"bootcount,omitempty"`
-	BootSeed        *[]byte   `cbor:"268,keyasint,omitempty" json:"bootseed,omitempty"`
-	// TODO: DLOAs
-	SoftwareName    *StringOrURI   `cbor:"270,keyasint,omitempty" json:"swname,omitempty"`
-	SoftwareVersion *Version       `cbor:"271,keyasint,omitempty" json:"swversion,omitempty"`
-	Manifests       *[]Manifest    `cbor:"272,keyasint,omitempty" json:"manifests,omitempty"`
-	Measurements    *[]Measurement `cbor:"273,keyasint,omitempty" json:"measurements,omitempty"`
-	// TODO: MeasrementResults
-	// TODO: IntendedUse
-	CWTClaims
+
+	// TODO: implement CWT/JWT and bundle handing here
+
+	claims ClaimsSet
 }
 
-// FromCBOR deserializes the supplied CBOR encoded EAT into the receiver Eat
-func (e *Eat) FromCBOR(data []byte) error {
-	return dm.Unmarshal(data, e)
+// Claims returns a pointer to the Eat's contained ClaimsSet
+func (o *Eat) Claims() *ClaimsSet {
+	return &o.claims
 }
 
-// ToCBOR serializes the receiver Eat into CBOR encoded EAT
-//
-//nolint:gocritic
-func (e Eat) ToCBOR() ([]byte, error) {
-	return em.Marshal(e)
+func (o *Eat) UnmarshalCBOR(data []byte) error {
+	return dm.Unmarshal(data, &o.claims)
 }
 
-// FromJSON deserializes the supplied JSON encoded EAT into the receiver Eat
-func (e *Eat) FromJSON(data []byte) error {
-	return json.Unmarshal(data, e)
+func (o *Eat) MarshalCBOR() ([]byte, error) {
+	return em.Marshal(&o.claims)
 }
 
-// ToJSON serializes the receiver Eat into JSON encoded EAT
-//
-//nolint:gocritic
-func (e Eat) ToJSON() ([]byte, error) {
-	return json.Marshal(e)
+func (o *Eat) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &o.claims)
+}
+
+func (o *Eat) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&o.claims)
 }

@@ -1,0 +1,22 @@
+{
+   "eat_nonce": "jkd8KL-8xQk",
+   "oemboot": true,
+   "dbgstat": "disabled-since-boot",
+   "oemid": "iUWt",
+   "ueid": "AZj1Ck_2wFhhyIYNE6Y46gA",
+   "swname": "Acme R-IoT-OS",
+   "swversion": [
+      "3.1.4"
+   ],
+   "measres": [
+      [
+         "Trustus Measurements",
+         [
+            [
+               "all",
+               "success"
+            ]
+         ]
+      ]
+   ]
+}

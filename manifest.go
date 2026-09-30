@@ -4,7 +4,7 @@
 package eat
 
 type Manifest struct {
-	_      struct{} `cbor:",toarray"` // TODO: implement Unmarshal.JSON
-	Type   int      // coap-content-format, see https://www.iana.org/assignments/core-parameters/core-parameters.xhtml
-	Format []byte   // bstr wrapped untagged-coswid, ...
+	_      struct{}   `cbor:",toarray"` // TODO: implement Unmarshal.JSON
+	Type   int        // coap-content-format, see https://www.iana.org/assignments/core-parameters/core-parameters.xhtml
+	Format BinaryData // bstr wrapped untagged-coswid, ...
 }
