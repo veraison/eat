@@ -3,11 +3,7 @@
 
 package eat
 
-import (
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
-)
+import "fmt"
 
 const (
 	UEIDTypeInvalid = iota
@@ -83,27 +79,5 @@ func validateIMEI(value []byte) error {
 	if vlen != 14 {
 		return fmt.Errorf("IMEI length must be exactly 14 bytes; found %v bytes", vlen)
 	}
-	return nil
-}
-
-// MarshalJSON encodes the UEID as a base64url string
-func (u UEID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(
-		base64.RawURLEncoding.EncodeToString(u),
-	)
-}
-
-// UnmarshalJSON decodes the supplied base64url string to an UEID
-func (u *UEID) UnmarshalJSON(data []byte) error {
-	var s string
-
-	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("JSON decoding failed for UEID: %w", err)
-	}
-	value, err := base64.RawURLEncoding.DecodeString(s)
-	if err != nil {
-		return fmt.Errorf("%s", err.Error())
-	}
-	*u = value
 	return nil
 }
