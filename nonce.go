@@ -212,6 +212,11 @@ func (o *Nonce) UnmarshalCBOR(data []byte) error {
 // MarshalJSON encodes the receiver Nonce as either a JSON string containing
 // the base64 encoding of the binary nonce (if the array comprises only one
 // element) or as an array of base64-encoded JSON strings.
+//
+// NOTE: While RFC 9711 (EAT) does not restrict the nonce format to base64-encoded
+// JSON strings, VERAISON/eat imposes a narrower interpretation for
+// JSON <-> CBOR conversion.
+// See discussion: https://github.com/ietf-rats-wg/eat/pull/421
 func (o Nonce) MarshalJSON() ([]byte, error) {
 	if err := validateNonceValues(o.values); err != nil {
 		return nil, err
