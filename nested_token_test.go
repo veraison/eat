@@ -35,6 +35,7 @@ func TestNestedToken_round_trip(t *testing.T) {
 				Type: NestedTokenBundle,
 				Data: []byte(`[["DIGEST",[-16,"3q2-7w"]],{"foo":"eyJpc3MiOiJiYXIifQ"}]`),
 			},
+			// nolint:gocritic
 			expectedCBOR: []byte{
 				0x78, 0x38, //                                     tstr(56)
 				0x5b, 0x5b, 0x22, 0x44, 0x49, 0x47, 0x45, 0x53, // . "[[\"DIGES"

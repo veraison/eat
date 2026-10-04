@@ -1,0 +1,13 @@
+# This repo enforces funlen
+linters:
+  enable:
+    - funlen
+  settings:
+    funlen:
+      lines: 100
+      statements: 50
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - funlen

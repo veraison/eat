@@ -152,7 +152,7 @@ func (o Nonce) Get(index int) []byte {
 		return nil
 	}
 
-	return o.values[index].get()
+	return o.values[index].get() // nolint:gosec // G602: false positive bounds are checked above
 }
 
 // AddHex provides the same functionality as Add except it takes the nonce value
@@ -175,7 +175,7 @@ func (o Nonce) MarshalCBOR() ([]byte, error) {
 	}
 
 	if len(o.values) == 1 {
-		return em.Marshal(o.values[0])
+		return em.Marshal(o.values[0]) // nolint:gosec // G02: guaranteed to have one element
 	}
 
 	return em.Marshal(o.values)
@@ -223,7 +223,7 @@ func (o Nonce) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(o.values) == 1 {
-		return json.Marshal(o.values[0])
+		return json.Marshal(o.values[0]) // nolint:gosec // G02: guaranteed to have one element
 	}
 
 	return json.Marshal(o.values)

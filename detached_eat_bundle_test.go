@@ -245,6 +245,7 @@ func TestDetachedEatBundle_tagged(t *testing.T) {
 			},
 		},
 	}
+	// nolint:gocritic
 	expectedCBOR := []byte{
 		0xd9, 0x02, 0x5a, //                               tag(602)
 		0x82,                                           // . array(2)
