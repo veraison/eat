@@ -104,7 +104,7 @@ func TestNonce_MarshalCBOR_multiple_ok(t *testing.T) {
 	//       deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
 	//    48                  # bytes(8)
 	//       abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
-	expected := []byte{0x82}
+	expected := []byte{0x82} //nolint:prealloc // testing only
 	expected = append(expected, byte(0x48))
 	expected = append(expected, tv[0]...)
 	expected = append(expected, byte(0x48))
@@ -151,7 +151,7 @@ func TestNonce_UnmarshalCBOR_multiple_ok(t *testing.T) {
 	//       deadbeefdeadbeef # "\xDE\xAD\xBE\xEF\xDE\xAD\xBE\xEF"
 	//    48                  # bytes(8)
 	//       abadcafeabadcafe # "\xAB\xAD\xCA\xFE\xAB\xAD\xCA\xFE"
-	data := []byte{0x82}
+	data := []byte{0x82} //nolint:prealloc // testing only
 	data = append(data, byte(0x48))
 	data = append(data, expected[0]...)
 	data = append(data, byte(0x48))
