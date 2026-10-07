@@ -4,6 +4,7 @@
 package eat
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -170,4 +171,32 @@ func TestIntOrString_misc(t *testing.T) {
 
 	ios = IntOrStringFromString("1")
 	assert.Equal(t, 1, ios.Int())
+}
+
+func TestIntOrString_JSON_key(t *testing.T) {
+	toEncode := map[IntOrString]any{
+		IntOrStringFromString("foo"): 1,
+	}
+
+	expectedJSON := `{"foo": 1}`
+	encoded, err := json.Marshal(toEncode)
+	assert.NoError(t, err)
+	assert.JSONEq(t, expectedJSON, string(encoded))
+
+	var decoded map[IntOrString]any
+	err = json.Unmarshal(encoded, &decoded)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, int(decoded[IntOrStringFromString("foo")].(float64)))
+}
+
+func TestIntOrString_text_marshaling(t *testing.T) {
+	ios := IntOrStringFromInt(1)
+	text, err := ios.MarshalText()
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("1"), text)
+
+	var other IntOrString
+	err = other.UnmarshalText(text)
+	assert.NoError(t, err)
+	assert.Equal(t, ios, other)
 }
