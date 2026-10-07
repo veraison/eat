@@ -355,3 +355,12 @@ func TestProfile_RoundTrip_CBOR_Long_OID_OK(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expectedOID, actualOID)
 }
+
+func TestMustNewProfile(t *testing.T) {
+	profile := MustNewProfile("1.2.3.4")
+	assert.True(t, profile.IsOID())
+
+	assert.Panics(t, func() {
+		_ = MustNewProfile("@@@")
+	})
+}
