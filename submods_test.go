@@ -93,6 +93,12 @@ func TestSubmod_round_trip(t *testing.T) {
 	}
 }
 
+func TestSubmod_UnmarshalJSON_empty(t *testing.T) {
+	var submod Submod
+	err := submod.UnmarshalJSON([]byte{})
+	assert.ErrorContains(t, err, "truncated input")
+}
+
 func TestSubmods_add_get(t *testing.T) {
 	submods := NewSubmods().
 		AddClaimsSet("foo", &ClaimsSet{
