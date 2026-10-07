@@ -171,3 +171,12 @@ func (o *IntOrString) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+func (o IntOrString) MarshalText() ([]byte, error) {
+	return []byte(o.String()), nil
+}
+
+func (o *IntOrString) UnmarshalText(data []byte) error {
+	*o = IntOrStringFromString(string(data))
+	return nil
+}
