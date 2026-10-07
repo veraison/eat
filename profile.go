@@ -33,6 +33,17 @@ type Profile struct {
 	val interface{}
 }
 
+// MustNewProfile is a version of NewProfile that panics instead of returning
+// an error.
+func MustNewProfile(urlOrOID string) *Profile {
+	ret, err := NewProfile(urlOrOID)
+	if err != nil {
+		panic(err)
+	}
+
+	return ret
+}
+
 // NewProfile instantiates a Profile object from the given input string
 // The string can either be an absolute URI or an ASN.1 Object Identifier
 // in dotted-decimal notation. Relative Object Identifiers (e.g., .1.1.29) are
