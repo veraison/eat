@@ -80,6 +80,9 @@ func (o *Submod) MarshalJSON() ([]byte, error) {
 
 func (o *Submod) UnmarshalJSON(data []byte) error {
 	text := strings.TrimSpace(string(data))
+	if text == "" {
+		return errors.New("truncated input")
+	}
 
 	switch text[0] {
 	case '[':
