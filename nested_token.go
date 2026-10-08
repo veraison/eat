@@ -78,13 +78,9 @@ type NestedToken struct {
 // NewNestedToken returns a new NestedToken from the provided type and data. An
 // error is returned if either the type or the data are invalid, or if they
 // don't match.
-func NewNestedToken(typ string, data []byte) (*NestedToken, error) {
-	providedType, err := NestedTokenTypeFromString(typ)
-	if err != nil {
-		return nil, err
-	}
+func NewNestedToken(typ NestedTokenType, data []byte) (*NestedToken, error) {
 
-	if providedType == NestedTokenCBOR {
+	if typ == NestedTokenCBOR {
 		if err := validateInnerCBORTags(data); err != nil {
 			return nil, fmt.Errorf("cbor: %w", err)
 		}
@@ -94,14 +90,14 @@ func NewNestedToken(typ string, data []byte) (*NestedToken, error) {
 			return nil, err
 		}
 
-		if providedType != identifiedType {
+		if typ != identifiedType {
 			return nil, fmt.Errorf("provided type is %q, but data appears to contain %q",
-				providedType.String(), identifiedType.String())
+				typ.String(), identifiedType.String())
 		}
 	}
 
 	return &NestedToken{
-		Type: providedType,
+		Type: typ,
 		Data: data,
 	}, nil
 }
