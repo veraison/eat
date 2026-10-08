@@ -269,14 +269,14 @@ func TestNestedToken_UnmarshalJSON_negative(t *testing.T) {
 func Test_NewNestedToken(t *testing.T) {
 	testCases := []struct {
 		title    string
-		typ      string
+		typ      NestedTokenType
 		data     []byte
 		expected NestedToken
 		err      string
 	}{
 		{
 			title: "ok CBOR",
-			typ:   "CBOR",
+			typ:   NestedTokenCBOR,
 			data: []byte{
 				0xd8, 0x3d, // tag(61)
 				0x01, //       . 1
@@ -288,7 +288,7 @@ func Test_NewNestedToken(t *testing.T) {
 		},
 		{
 			title: "ok JWT",
-			typ:   "JWT",
+			typ:   NestedTokenJWT,
 			data:  []byte(`"3q2-7w.3q2-7w.3q2-7w"`),
 			expected: NestedToken{
 				Type: NestedTokenJWT,
@@ -296,26 +296,20 @@ func Test_NewNestedToken(t *testing.T) {
 			},
 		},
 		{
-			title: "err invalid type",
-			typ:   "FOO",
-			data:  []byte(`"3q2-7w.3q2-7w.3q2-7w"`),
-			err:   `unknown nested token type "FOO"`,
-		},
-		{
 			title: "err malformed nested-token",
-			typ:   "DIGEST",
+			typ:   NestedTokenDigest,
 			data:  []byte("@@@"),
 			err:   "malformed nested-token",
 		},
 		{
 			title: "err mismatched type and data",
-			typ:   "DIGEST",
+			typ:   NestedTokenDigest,
 			data:  []byte(`"3q2-7w.3q2-7w.3q2-7w"`),
 			err:   `provided type is "DIGEST", but data appears to contain "JWT"`,
 		},
 		{
 			title: "err unexpected CBOR tag",
-			typ:   "CBOR",
+			typ:   NestedTokenCBOR,
 			data: []byte{
 				0xd8, 0x2a, // . tag(42)
 				0x01, //       . . 1
