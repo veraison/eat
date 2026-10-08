@@ -380,3 +380,87 @@ func TestNonce_UnmarshalJSON_two_entries_ok(t *testing.T) {
 		assert.Equal(t, expected[i], actual.Get(i))
 	}
 }
+
+func TestNonceFromAny(t *testing.T) {
+	bytes := MustHexDecode(t, "deadbeefdeadbeef")
+	expected := Nonce{
+		[]*nonce{
+			&nonce{bytes},
+		},
+	}
+	testCases := []struct {
+		title    string
+		input    any
+		expected Nonce
+		err      string
+	}{
+		{
+			title:    "ok Nonce",
+			input:    *MustNewNonceFromBytes(bytes),
+			expected: expected,
+		},
+		{
+			title:    "ok pointer",
+			input:    MustNewNonceFromBytes(bytes),
+			expected: expected,
+		},
+		{
+			title:    "ok []byte",
+			input:    bytes,
+			expected: expected,
+		},
+		{
+			title:    "ok [][]byte",
+			input:    [][]byte{bytes},
+			expected: expected,
+		},
+		{
+			title:    "ok BinaryData",
+			input:    BinaryData(bytes),
+			expected: expected,
+		},
+		{
+			title:    "ok string",
+			input:    "3q2-796tvu8",
+			expected: expected,
+		},
+		{
+			title:    "ok []string",
+			input:    []string{"3q2-796tvu8"},
+			expected: expected,
+		},
+		{
+			title: "err bad type",
+			input: 1,
+			err:   "cannot convert 1 (int) to Nonce",
+		},
+		{
+			title: "err bad string",
+			input: "@@@",
+			err:   "illegal base64 data at input byte 0",
+		},
+		{
+			title: "err bad []string",
+			input: []string{"@@@"},
+			err:   "entry[0]: illegal base64 data at input byte 0",
+		},
+		{
+			title: "err nil",
+			input: (*Nonce)(nil),
+			err:   "nil pointer",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			nonce, err := NonceFromAny(tc.input)
+
+			if tc.err == "" {
+				assert.NoError(t, err)
+				assert.EqualValues(t, tc.expected, *nonce)
+			} else {
+				assert.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}

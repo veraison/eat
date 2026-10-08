@@ -4,10 +4,12 @@
 package eat
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 )
 
 // nonce-type = bstr .size (8..64)
@@ -126,6 +128,58 @@ func NewNonceFromBytes(values ...[]byte) (*Nonce, error) {
 	}
 
 	return &ret, nil
+}
+
+// NonceFromAny returns a pointer to the Nonce obtained form the provided
+// input. If the input is already a Nonce or *Nonce, then a pointer to that
+// Nonce is returned, otherwise a new Nonce is constructed. If the input cannot
+// be converted to a Nonce, an error is returned.
+func NonceFromAny(input any) (*Nonce, error) {
+	valueInfo := reflect.ValueOf(input)
+	if valueInfo.Kind() == reflect.Pointer {
+		if valueInfo.IsNil() {
+			return nil, errors.New("nil pointer")
+		}
+
+		input = valueInfo.Elem().Interface()
+	}
+
+	var allBytes [][]byte
+
+	switch t := input.(type) {
+	case Nonce:
+		return &t, nil
+	case []byte:
+		allBytes = append(allBytes, t)
+	case [][]byte:
+		allBytes = t
+	case BinaryData:
+		allBytes = append(allBytes, t)
+	case []BinaryData:
+		for _, data := range t {
+			allBytes = append(allBytes, data)
+		}
+	case string:
+		bytes, err := base64.RawURLEncoding.DecodeString(t)
+		if err != nil {
+			return nil, err
+		}
+
+		allBytes = append(allBytes, bytes)
+	case []string:
+		for i, text := range t {
+			bytes, err := base64.RawURLEncoding.DecodeString(text)
+			if err != nil {
+				return nil, fmt.Errorf("entry[%d]: %w", i, err)
+			}
+
+			allBytes = append(allBytes, bytes)
+		}
+	default:
+		return nil, fmt.Errorf("cannot convert %v (%T) to Nonce", input, input)
+	}
+
+	return NewNonceFromBytes(allBytes...)
 }
 
 // Add the supplied nonce, provided as a byte array, to the Nonce receiver.
