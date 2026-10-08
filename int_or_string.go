@@ -8,8 +8,48 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 )
+
+// IntOrStringMapFromAny creates a map[IntOrString]any from the provided value
+// if possible, returning an error otherwose.
+func IntOrStringMapFromAny(value any) (map[IntOrString]any, error) {
+	valueInfo := reflect.ValueOf(value)
+	if valueInfo.Kind() == reflect.Pointer {
+		if valueInfo.IsNil() {
+			return nil, errors.New("nil pointer")
+		}
+
+		value = valueInfo.Elem().Interface()
+	}
+
+	var ret map[IntOrString]any
+
+	switch t := value.(type) {
+	case map[IntOrString]any:
+		ret = t
+	case map[string]any:
+		ret = make(map[IntOrString]any)
+		for k, v := range t {
+			ret[IntOrStringFromString(k)] = v
+		}
+	case map[any]any:
+		ret = make(map[IntOrString]any)
+		for k, v := range t {
+			convertedK, err := IntOrStringFromAny(k)
+			if err != nil {
+				return nil, err
+			}
+
+			ret[convertedK] = v
+		}
+	default:
+		return nil, fmt.Errorf("cannot convert %T to map[eat.IntOrString]any", value)
+	}
+
+	return ret, nil
+}
 
 // IntOrString has an underlying value that is either an int or string.
 type IntOrString struct {

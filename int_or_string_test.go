@@ -219,3 +219,83 @@ func TestIntOrString_text_marshaling(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ios, other)
 }
+
+func TestIntOrStringMapFromAny(t *testing.T) {
+	testCases := []struct {
+		title    string
+		input    any
+		expected map[IntOrString]any
+		err      string
+	}{
+		{
+			title: "ok map[IntOrString]any",
+			input: map[IntOrString]any{
+				IntOrStringFromString("foo"): true,
+				IntOrStringFromInt(1):        false,
+			},
+			expected: map[IntOrString]any{
+				IntOrStringFromString("foo"): true,
+				IntOrStringFromInt(1):        false,
+			},
+		},
+		{
+			title: "ok map[any]any",
+			input: map[any]any{
+				"foo": true,
+				1:     false,
+			},
+			expected: map[IntOrString]any{
+				IntOrStringFromString("foo"): true,
+				IntOrStringFromInt(1):        false,
+			},
+		},
+		{
+			title: "ok map[string]any",
+			input: map[string]any{
+				"foo": true,
+			},
+			expected: map[IntOrString]any{
+				IntOrStringFromString("foo"): true,
+			},
+		},
+		{
+			title: "ok pointer",
+			input: &map[string]any{
+				"foo": true,
+			},
+			expected: map[IntOrString]any{
+				IntOrStringFromString("foo"): true,
+			},
+		},
+		{
+			title: "err bad type",
+			input: 1,
+			err:   "cannot convert int to map[eat.IntOrString]any",
+		},
+		{
+			title: "err bad map",
+			input: &map[any]any{
+				true: "foo",
+			},
+			err: "cannot convert true (bool) to IntOrString",
+		},
+		{
+			title: "err nil",
+			input: (*IntOrString)(nil),
+			err:   "nil pointer",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			iosMap, err := IntOrStringMapFromAny(tc.input)
+
+			if tc.err == "" {
+				assert.NoError(t, err)
+				assert.EqualValues(t, tc.expected, iosMap)
+			} else {
+				assert.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}
