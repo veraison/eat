@@ -6,7 +6,24 @@ GO111MODULE := on
 
 GOPKG := github.com/veraison/eat
 
-GOLINT ?= golangci-lint
+TOPDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+
+GOLINT_ARGS ?= run --timeout=3m -E dupl -E gocritic -E prealloc
+
+GOLINT_VERSION = v2.13.2
+GOLINT = $(TOPDIR)/tools-bin/golangci-lint
+GOLINT_STAMP = $(TOPDIR)/tools-bin/golangci-lint-$(GOLINT_VERSION).stamp
+
+$(GOLINT): $(GOLINT_STAMP)
+
+$(GOLINT_STAMP):
+	mkdir -p $(dir $(GOLINT))
+	touch $(GOLINT_STAMP)
+	GOBIN=$(dir $(GOLINT)) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLINT_VERSION)
+
+.PHONY: lint
+lint: $(GOLINT)
+	$(GOLINT) $(GOLINT_ARGS)
 
 ifeq ($(MAKECMDGOALS),lint)
 GOLINT_ARGS ?= run --timeout=3m
@@ -15,9 +32,6 @@ else
   GOLINT_ARGS ?= run --timeout=3m --issues-exit-code=0 -E dupl -E gocritic -E lll -E prealloc
   endif
 endif
-
-.PHONY: lint lint-extra
-lint lint-extra: ; $(GOLINT) $(GOLINT_ARGS)
 
 ifeq ($(MAKECMDGOALS),test)
 GOTEST_ARGS ?= -v -race $(GOPKG)
@@ -51,7 +65,6 @@ help:
 	@echo "  * test:       run unit tests for $(GOPKG)"
 	@echo "  * test-cover: run unit tests and measure coverage for $(GOPKG)"
 	@echo "  * lint:       lint sources using default configuration"
-	@echo "  * lint-extra: lint sources using default configuration and some extra checkers"
 	@echo "  * presubmit:  check you are ready to push your local branch to remote"
 	@echo "  * help:       print this menu"
 	@echo "  * licenses:   check licenses of dependent packages"

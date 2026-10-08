@@ -13,3 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# tools-bin directory is created automatically when running make. It contains
+# pre-built tools needs for the make process (such as golanci-lint)
+tools-bin/*
