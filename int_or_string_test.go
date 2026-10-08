@@ -5,6 +5,7 @@ package eat
 
 import (
 	"encoding/json"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,10 @@ func Test_IntOrStringFromAny(t *testing.T) {
 			input: int64(1),
 		},
 		{
+			title: "ok int",
+			input: int(1),
+		},
+		{
 			title: "ok uint8",
 			input: uint8(1),
 		},
@@ -49,6 +54,10 @@ func Test_IntOrStringFromAny(t *testing.T) {
 			input: uint64(1),
 		},
 		{
+			title: "ok uint",
+			input: uint(1),
+		},
+		{
 			title: "ok float64",
 			input: 1.0,
 		},
@@ -59,12 +68,22 @@ func Test_IntOrStringFromAny(t *testing.T) {
 		{
 			title: "err bool",
 			input: true,
-			err:   "unexpected algorithm value: true(bool)",
+			err:   "cannot convert true (bool) to IntOrString",
 		},
 		{
 			title: "err struct",
 			input: struct{}{},
-			err:   "unexpected algorithm value: {}(struct {})",
+			err:   "cannot convert {} (struct {}) to IntOrString",
+		},
+		{
+			title: "err uint64 too big",
+			input: uint64(math.MaxInt64) + 1,
+			err:   "out of range: 9223372036854775808",
+		},
+		{
+			title: "err uint too big",
+			input: uint(math.MaxInt64) + 1,
+			err:   "out of range: 9223372036854775808",
 		},
 	}
 
@@ -153,7 +172,7 @@ func TestIntOrString_UnmarshalJSON_negative(t *testing.T) {
 	assert.ErrorContains(t, err, "unexpected end of JSON input")
 
 	err = ios.UnmarshalJSON([]byte(`true`))
-	assert.ErrorContains(t, err, "unexpected algorithm value: true(bool)")
+	assert.ErrorContains(t, err, "cannot convert true (bool) to IntOrString")
 }
 
 func TestIntOrString_misc(t *testing.T) {

@@ -62,6 +62,13 @@ func IntOrStringFromAny(val any) (IntOrString, error) {
 			return IntOrString{}, fmt.Errorf("out of range: %d", t)
 		}
 		ret.val = int(t)
+	case int:
+		ret.val = t
+	case uint:
+		if uint64(t) > math.MaxInt64 {
+			return IntOrString{}, fmt.Errorf("out of range: %d", t)
+		}
+		ret.val = int(t)
 	case float64:
 		ret.val = int(t)
 	case string:
@@ -72,7 +79,7 @@ func IntOrStringFromAny(val any) (IntOrString, error) {
 			ret.val = t
 		}
 	default:
-		return IntOrString{}, fmt.Errorf("unexpected algorithm value: %v(%T)", t, t)
+		return IntOrString{}, fmt.Errorf("cannot convert %v (%T) to IntOrString", t, t)
 	}
 
 	return ret, nil
