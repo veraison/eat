@@ -364,3 +364,14 @@ func TestMustNewProfile(t *testing.T) {
 		_ = MustNewProfile("@@@")
 	})
 }
+
+func TestProfile_String(t *testing.T) {
+	profile := MustNewProfile("1.2.3.4")
+	assert.Equal(t, "1.2.3.4", profile.String())
+
+	profile = MustNewProfile("http://example.com")
+	assert.Equal(t, "http://example.com", profile.String())
+
+	profile = &Profile{}
+	assert.Equal(t, "", profile.String())
+}
