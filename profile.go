@@ -61,7 +61,8 @@ func (s *Profile) Set(urlOrOID string) error {
 	return s.decodeProfileFromString(urlOrOID)
 }
 
-// Get returns the profile as string (URI or dotted-decimal OID)
+// Get returns the profile as string (URI or dotted-decimal OID). If the
+// profile is invalid, an error is returned.
 func (s Profile) Get() (string, error) {
 	switch t := s.val.(type) {
 	case *url.URL:
@@ -71,6 +72,13 @@ func (s Profile) Get() (string, error) {
 	default:
 		return "", fmt.Errorf("no valid EAT profile")
 	}
+}
+
+// String returns the profile as string (URI or dotted-decimal OID). If the
+// profile is invalid, an empty string is returned.
+func (s Profile) String() string {
+	ret, _ := s.Get()
+	return ret
 }
 
 // IsURI checks whether a stored profile is a URI
