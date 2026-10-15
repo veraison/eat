@@ -1,6 +1,7 @@
 // Copyright 2020 Contributors to the Veraison project.
 // SPDX-License-Identifier: Apache-2.0
 
+//nolint:staticcheck // json.Marshal triggers a warning because go-cose Key.Params uses map[any]any
 package eat
 
 import (

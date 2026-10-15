@@ -45,7 +45,7 @@ exp | 4 | ✅
 nbf | 5 | ✅
 iat | 6 | ✅
 cti | 7 | ⚠️ no jti support
-cnf | 8 | ⚠️ supports only OKP and EC2 COSE_Key, no EncryptedKey support
+cnf | 8 | ⚠️ no jwk support (see [cnf support](#cnf-support))
 
 ## Supported Type for Manifests and Measurements
 
@@ -59,3 +59,9 @@ coap-conent-type | id | Supported?
 `application/swid+cbor` (untagged-coswid) | 258 | ✅
 `application/measured-component+cbor` | TBD1 in [draft-ietf-rats-eat-measured-component](https://datatracker.ietf.org/doc/draft-ietf-rats-eat-measured-component/) | ✅ e.g. `cbor.Unmarshal(measurement.Format, &mc)`
 `application/measured-component+json` | TBD2 in [draft-ietf-rats-eat-measured-component](https://datatracker.ietf.org/doc/draft-ietf-rats-eat-measured-component/) | ✅ e.g. `json.Unmarshal(measurement.Format, &mc)`
+
+## cnf support
+
+> [!WARNING] JWK in key confirmation is NOT supported
+
+This package depends on [`veraison/go-cose`](https://github.com/veraison/go-cose) for marshaling and unmarshaling the `cnf` claim. Since `go-cose` supports only COSE/CBOR serialization ([COSE Key](https://datatracker.ietf.org/doc/html/rfc9052#section-7)), using `FromJSON` and `ToJSON` with JWK key confirmation may produce unexpected results.
