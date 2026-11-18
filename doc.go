@@ -3,6 +3,6 @@
 
 /*
 Package eat provides an API for creating and interacting with Entity
-Attestation Tokens defined by draft-ietf-rats-eat.
+Attestation Tokens defined by RFC 9711.
 */
 package eat
